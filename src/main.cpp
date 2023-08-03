@@ -44,6 +44,20 @@ void setup() {
   //Buttons
   increaseTemperatureButton.attachClick([] { tempController.adjustTemperature(.5); });
   decreaseTemperatureButton.attachClick([] { tempController.adjustTemperature(-.5); });
+  increaseTemperatureButton.attachDuringLongPress([] {
+    static unsigned long lastChangeTime = 0;
+    if (millis() - lastChangeTime > 300) {
+      tempController.adjustTemperature(.5);
+      lastChangeTime = millis();
+    }
+  });
+  decreaseTemperatureButton.attachDuringLongPress([] {
+    static unsigned long lastChangeTime = 0;
+    if (millis() - lastChangeTime > 300) {
+      tempController.adjustTemperature(-.5);
+      lastChangeTime = millis();
+    }
+  });
 
 }
 

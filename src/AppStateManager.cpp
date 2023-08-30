@@ -1,27 +1,33 @@
 #include "AppStateManager.h"
 
-AppStateManager::AppStateManager(DisplayManager& displayManager)
-    : currentState(AppState::CURRENT_TEMPERATURE), displayManager(displayManager) {}
+AppStateManager::AppStateManager(DisplayManager& displayManager, TemperatureController& tempController)
+    : currentState(AppState::CURRENT_TEMPERATURE), displayManager(displayManager), temperatureController(tempController) {}
+
 
 void AppStateManager::setAppState(AppState state) {
     currentState = state;
 }
 
-void AppStateManager::display(float temperature) {
+
+void AppStateManager::display() {
     switch (currentState) {
       case AppState::CURRENT_TEMPERATURE:
-        displayManager.displayTemperature(temperature);
-        displayManager.displayBottomLeft("Cool");
-        displayManager.displayBottomRight("Open");
-        displayManager.displayBottomCentre("XO");
+        displayManager.displayTemperature(temperatureController.getCurrentTemperature());
+        displayManager.displayBottomLeft(temperatureController.getMode());
+        displayManager.displayBottomRight(temperatureController.getMotorState());
         break;
       case AppState::SET_TEMPERATURE:
-        // Display something different
-        displayManager.displayTemperature(temperature);
-        displayManager.displayBottomLeft("Button");
-        displayManager.displayBottomRight("Pressed");
-        displayManager.displayBottomCentre("XX");
+        displayManager.displayTemperature(temperatureController.getSetTemperature());
+        displayManager.displayBottomCentre("Set Temperature");
         break;
-      // add more cases as needed
+    }
+}
+void AppStateManager::recordAdjustmentTime() {
+    lastAdjustmentTime = millis();
+}
+
+void AppStateManager::tick() {
+    if (currentState == AppState::SET_TEMPERATURE && millis() - lastAdjustmentTime > 3000) {
+        setAppState(AppState::CURRENT_TEMPERATURE);
     }
 }

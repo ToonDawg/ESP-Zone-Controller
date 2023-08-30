@@ -8,19 +8,27 @@
 #include <OneButton.h>
 #include "LargeFont.h"
 #include "SmallFont.h"
+#include "AppStateManager.h"
 
 constexpr int OLED_SCREEN_WIDTH = 128;
 constexpr int OLED_SCREEN_HEIGHT = 64;
 constexpr int OLED_I2C_ADDRESS = 0x3C;
 constexpr unsigned int INCREASE_TEMPERATURE_BUTTON_PIN = 15;
-constexpr unsigned int DECREASE_TEMPERATURE_BUTTON_PIN = 3;
+constexpr unsigned int DECREASE_TEMPERATURE_BUTTON_PIN = 4;
+constexpr unsigned int TOGGLE_MODE_BUTTON_PIN = 5;
+constexpr unsigned int TOGGLE_MOTOR_STATE_BUTTON_PIN = 18;
+
+
 
 Adafruit_SSD1306 oledDisplay(OLED_SCREEN_WIDTH, OLED_SCREEN_HEIGHT, &Wire);
 TemperatureSensor temperatureSensor;
 TemperatureController tempController(20.0, temperatureSensor);
 OneButton increaseTemperatureButton(INCREASE_TEMPERATURE_BUTTON_PIN, true);
 OneButton decreaseTemperatureButton(DECREASE_TEMPERATURE_BUTTON_PIN, true);
+OneButton toggleModeButton(TOGGLE_MODE_BUTTON_PIN, true);
+OneButton toggleMotorStateButton(TOGGLE_MOTOR_STATE_BUTTON_PIN, true);
 DisplayManager displayManager(oledDisplay);
+AppStateManager appStateManager(displayManager, tempController);
 
 
 constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;
@@ -42,8 +50,31 @@ void setup() {
   temperatureSensor.begin();
 
   //Buttons
-  increaseTemperatureButton.attachClick([] { tempController.adjustTemperature(.5); });
-  decreaseTemperatureButton.attachClick([] { tempController.adjustTemperature(-.5); });
+  increaseTemperatureButton.attachClick([] { 
+    tempController.adjustTemperature(.5); 
+    appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
+    appStateManager.recordAdjustmentTime();
+}); 
+
+  decreaseTemperatureButton.attachClick([] { 
+    tempController.adjustTemperature(-.5);
+    appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
+    appStateManager.recordAdjustmentTime();
+
+  });
+
+  toggleModeButton.attachClick([] { 
+      Serial.println("Toggle Mode Button Clicked");
+      tempController.toggleMode();
+      Serial.println(tempController.getMode());
+  });
+
+  toggleMotorStateButton.attachClick([] { 
+      Serial.println("Toggle Motor State Button Clicked");
+      tempController.toggleMotorState();
+      Serial.println(tempController.getMotorState());
+  });
+
   increaseTemperatureButton.attachDuringLongPress([] {
     static unsigned long lastChangeTime = 0;
     if (millis() - lastChangeTime > 300) {
@@ -64,18 +95,15 @@ void setup() {
 void loop() {
   increaseTemperatureButton.tick();
   decreaseTemperatureButton.tick();
-
-  float temperature = tempController.getCurrentTemperature();
+  toggleModeButton.tick();
+  toggleMotorStateButton.tick();
+  appStateManager.tick(); 
 
   // Update the OLED display
   oledDisplay.clearDisplay();
   oledDisplay.setTextSize(1);
   oledDisplay.setTextColor(WHITE);
 
-  displayManager.displayTemperature(temperature);
-  displayManager.displayBottomLeft("Cool");
-  displayManager.displayBottomRight("Open");
-  displayManager.displayBottomCentre("XO");
-
+  appStateManager.display();
   oledDisplay.display();
 }

@@ -25,3 +25,24 @@ float TemperatureController::getCurrentTemperature()
     }
     return currentTemperature;
 }
+
+void TemperatureController::toggleMode()
+{
+    currentMode = (currentMode == Mode::Heat) ? Mode::Cool : Mode::Heat;
+}
+
+void TemperatureController::toggleMotorState()
+{
+    currentMotorState = (currentMotorState == MotorState::Open) ? MotorState::Closed : MotorState::Open;
+}
+
+const char* TemperatureController::getMode() const
+{
+    return (currentMode == Mode::Heat) ? "Heat" : "Cool";
+    
+}
+
+const char* TemperatureController::getMotorState() const
+{
+    return (currentMotorState == MotorState::Open) ? "Open" : "Closed";
+}

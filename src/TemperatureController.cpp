@@ -1,13 +1,13 @@
 #include "TemperatureController.h"
 #include <Arduino.h>
+#include "Icons.h"
 
-TemperatureController::TemperatureController(float initialTemp, TemperatureSensor& sensor)
+TemperatureController::TemperatureController(float initialTemp, TemperatureSensor &sensor)
     : setTemperature(initialTemp), temperatureSensor(sensor), currentTemperature(0.0f), lastTempCheckTime(0) {}
 
 void TemperatureController::adjustTemperature(float amount)
 {
     setTemperature += amount;
-    Serial.println(setTemperature);
 }
 
 float TemperatureController::getSetTemperature() const
@@ -36,13 +36,70 @@ void TemperatureController::toggleMotorState()
     currentMotorState = (currentMotorState == MotorState::Open) ? MotorState::Closed : MotorState::Open;
 }
 
-const char* TemperatureController::getMode() const
+const char *TemperatureController::getMode() const
 {
     return (currentMode == Mode::Heat) ? "Heat" : "Cool";
-    
 }
 
-const char* TemperatureController::getMotorState() const
+const char *TemperatureController::getMotorState() const
 {
     return (currentMotorState == MotorState::Open) ? "Open" : "Closed";
+}
+
+const tImage& TemperatureController::getModeIcon() const
+{
+    return (currentMode == Mode::Heat) ? heatIcon : coolIcon;
+}
+
+const tImage& TemperatureController::getMotorStateIcon() const
+{
+    return (currentMotorState == MotorState::Open) ? motorStateOnIcon : motorStateOffIcon;
+}
+
+
+void TemperatureController::regulateTemperature()
+{
+    float currentTemp = getCurrentTemperature();
+    bool shouldToggle = false;
+
+    switch (currentMode)
+    {
+    case Mode::Heat:
+        shouldToggle = shouldToggleForHeat(currentTemp);
+        break;
+    case Mode::Cool:
+        shouldToggle = shouldToggleForCool(currentTemp);
+        break;
+    }
+
+    if (shouldToggle)
+    {
+        toggleMotorState();
+    }
+}
+
+bool TemperatureController::shouldToggleForHeat(float currentTemp) const
+{
+    if (currentTemp < (setTemperature - TEMPERATURE_THRESHOLD) && currentMotorState == MotorState::Closed)
+    {
+        return true;
+    }
+    if (currentTemp > (setTemperature + TEMPERATURE_THRESHOLD) && currentMotorState == MotorState::Open)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool TemperatureController::shouldToggleForCool(float currentTemp) const
+{
+    if (currentTemp > (setTemperature + TEMPERATURE_THRESHOLD) && currentMotorState == MotorState::Closed)
+    {
+        return true;
+    }
+    if (currentTemp < (setTemperature - TEMPERATURE_THRESHOLD) && currentMotorState == MotorState::Open)
+    {
+        return true;
+    }
+    return false;
 }

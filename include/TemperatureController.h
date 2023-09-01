@@ -2,28 +2,33 @@
 #define TEMPERATURE_CONTROLLER_H
 
 #include "TemperatureSensor.h"
+#include "Icons.h"
 
 enum class Mode {
-  Heat,
-  Cool,
+    Heat,
+    Cool,
 };
+
 enum class MotorState {
-  Open,
-  Closed,
+    Open,
+    Closed,
 };
 
 class TemperatureController {
-  private:
+private:
     float setTemperature;
     float currentTemperature;
-    private:
     Mode currentMode = Mode::Cool;
     MotorState currentMotorState = MotorState::Open;
     TemperatureSensor& temperatureSensor;
     unsigned long lastTempCheckTime;
     static constexpr unsigned long TEMPERATURE_INTERVAL = 2000;
+    static constexpr float TEMPERATURE_THRESHOLD = 0.5;
 
-  public:
+    bool shouldToggleForHeat(float currentTemp) const;
+    bool shouldToggleForCool(float currentTemp) const;
+
+public:
     TemperatureController(float initialTemp, TemperatureSensor& sensor);
     void toggleMode();
     const char* getMode() const;
@@ -32,7 +37,9 @@ class TemperatureController {
     void adjustTemperature(float amount);
     float getSetTemperature() const;
     float getCurrentTemperature();
-    
+    void regulateTemperature();
+    const tImage& getModeIcon() const;
+    const tImage& getMotorStateIcon() const;
 };
 
 #endif // TEMPERATURE_CONTROLLER_H

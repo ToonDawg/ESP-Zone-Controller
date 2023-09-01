@@ -1,6 +1,7 @@
 #include "DisplayManager.h"
 #include "LargeFont.h"
 #include "SmallFont.h"
+#include "Icons.h"
 
 constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;
 constexpr int16_t FONT_VERTICAL_PADDING = 6;
@@ -28,6 +29,18 @@ int16_t DisplayManager::calculateTextHeight(const String& text, const GFXfont* f
   display.setFont(font);
   display.getTextBounds(text.c_str(), 0, 0, &x, &y, &w, &h);
   return h;
+}
+
+void DisplayManager::draw8BitImage(int16_t x, int16_t y, const tImage& image) {
+    for (int16_t j = 0; j < image.height; j++) {
+        for (int16_t i = 0; i < image.width; i++) {
+            if (image.data[j * image.width + i] == 0xff) {
+                display.drawPixel(x + i, y + j, WHITE);
+            } else {
+                display.drawPixel(x + i, y + j, BLACK);
+            }
+        }
+    }
 }
 
 void DisplayManager::displayTemperature(float temperature) {
@@ -60,6 +73,19 @@ void DisplayManager::displayBottomLeft(const String& message) {
   display.print(message);
 }
 
+void DisplayManager::displayIconBottomLeft(const tImage& icon) {
+    int16_t iconX = 5;  
+    int16_t iconY = display.height() - icon.height;
+
+    draw8BitImage(iconX, iconY, icon);
+}
+
+void DisplayManager::displayIconBottomRight(const tImage& icon) {
+    int16_t iconX = display.width() - icon.width - DISPLAY_SIDE_MARGIN;  
+    int16_t iconY = display.height() - icon.height;
+
+    draw8BitImage(iconX, iconY, icon);
+}
 void DisplayManager::displayBottomRight(const String& message) {
   int16_t textBoxX, textBoxY;
   uint16_t textBoxWidth, textBoxHeight;

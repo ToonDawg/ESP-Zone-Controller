@@ -1,4 +1,5 @@
 #include "AppStateManager.h"
+#include "icons.c"
 
 AppStateManager::AppStateManager(DisplayManager& displayManager, TemperatureController& tempController)
     : currentState(AppState::CURRENT_TEMPERATURE), displayManager(displayManager), temperatureController(tempController) {}
@@ -13,12 +14,12 @@ void AppStateManager::display() {
     switch (currentState) {
       case AppState::CURRENT_TEMPERATURE:
         displayManager.displayTemperature(temperatureController.getCurrentTemperature());
-        displayManager.displayBottomLeft(temperatureController.getMode());
-        displayManager.displayBottomRight(temperatureController.getMotorState());
+        displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
+        displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
         break;
       case AppState::SET_TEMPERATURE:
         displayManager.displayTemperature(temperatureController.getSetTemperature());
-        displayManager.displayBottomCentre("Set Temperature");
+        displayManager.displayBottomCentre("Set Temp");
         break;
     }
 }

@@ -13,5 +13,9 @@ extern const tImage heatIcon;
 extern const tImage coolIcon;
 extern const tImage motorStateOnIcon;
 extern const tImage motorStateOffIcon;
+extern const tImage icons8opendoor25;
+extern const tImage icons8opendoor;
+extern const tImage windFlow;
+extern const tImage noWindFlow;
 
 #endif // ICONS_H

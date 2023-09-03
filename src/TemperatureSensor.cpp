@@ -3,9 +3,9 @@
 TemperatureSensor::TemperatureSensor() {}
 
 void TemperatureSensor::begin() {
-  tempsensor.begin();
+  tempSensor.begin();
 }
 
 float TemperatureSensor::readTemperature() {
-  return tempsensor.readTempC();
+  return tempSensor.readTempC();
 }

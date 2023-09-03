@@ -9,18 +9,28 @@ void AppStateManager::setAppState(AppState state) {
     currentState = state;
 }
 
+const AppStateManager::AppState& AppStateManager::getAppState() const {
+    return currentState;
+}
+
 
 void AppStateManager::display() {
     switch (currentState) {
-      case AppState::CURRENT_TEMPERATURE:
-        displayManager.displayTemperature(temperatureController.getCurrentTemperature());
-        displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
-        displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
-        break;
-      case AppState::SET_TEMPERATURE:
-        displayManager.displayTemperature(temperatureController.getSetTemperature());
-        displayManager.displayBottomCentre("Set Temp");
-        break;
+        case AppState::CURRENT_TEMPERATURE:
+            displayManager.displayTemperature(temperatureController.getCurrentTemperature());
+            displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
+            displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
+            displayManager.render();
+            break;
+        case AppState::SET_TEMPERATURE:
+            displayManager.displayTemperature(temperatureController.getSetTemperature());
+            displayManager.displayBottomCentre("Set Temp");
+            displayManager.render();
+            break;
+        case AppState::OFF:
+            displayManager.displayOff();
+            displayManager.render();
+            break;
     }
 }
 void AppStateManager::recordAdjustmentTime() {

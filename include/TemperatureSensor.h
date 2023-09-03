@@ -10,7 +10,7 @@ public:
   float readTemperature();
 
 private:
-  Adafruit_MCP9808 tempsensor;
+  Adafruit_MCP9808 tempSensor;
 };
 
 #endif

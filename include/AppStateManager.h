@@ -9,6 +9,7 @@ public:
     enum class AppState {
       CURRENT_TEMPERATURE,
       SET_TEMPERATURE,
+      OFF
     };
 
 private:
@@ -20,6 +21,7 @@ private:
 public:
     AppStateManager(DisplayManager& displayManager, TemperatureController& tempController);
     void setAppState(AppState state);
+    const AppState& getAppState() const;
     void display();
     void tick();
     void recordAdjustmentTime();

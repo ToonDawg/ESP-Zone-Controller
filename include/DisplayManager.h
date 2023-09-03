@@ -2,13 +2,13 @@
 #define DISPLAY_MANAGER_H
 
 #include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_SH110X.h>
 #include <Wire.h>
 #include "icons.h"
 
 class DisplayManager {
 public:
-    DisplayManager(Adafruit_SSD1306& display): display(display) {}
+    DisplayManager(Adafruit_SH1106G& display): display(display) {}
 
     void displayTemperature(float temperature);
     void displayBottomLeft(const String& message);
@@ -16,9 +16,11 @@ public:
     void displayIconBottomRight(const tImage& icon);
     void displayBottomRight(const String& message);
     void displayBottomCentre(const String& message);
+    void displayOff();
+    void render();
 
 protected:
-    Adafruit_SSD1306& display;
+    Adafruit_SH1106G& display;
 
     int16_t calculateTextCenterX(const String& text, const GFXfont* font);
     int16_t calculateTextWidth(const String& text, const GFXfont* font);

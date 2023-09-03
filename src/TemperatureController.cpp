@@ -53,7 +53,7 @@ const tImage& TemperatureController::getModeIcon() const
 
 const tImage& TemperatureController::getMotorStateIcon() const
 {
-    return (currentMotorState == MotorState::Open) ? motorStateOnIcon : motorStateOffIcon;
+    return (currentMotorState == MotorState::Open) ? windFlow : noWindFlow;
 }
 
 

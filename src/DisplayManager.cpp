@@ -35,9 +35,9 @@ void DisplayManager::draw8BitImage(int16_t x, int16_t y, const tImage& image) {
     for (int16_t j = 0; j < image.height; j++) {
         for (int16_t i = 0; i < image.width; i++) {
             if (image.data[j * image.width + i] == 0xff) {
-                display.drawPixel(x + i, y + j, WHITE);
+                display.drawPixel(x + i, y + j, MONOOLED_WHITE);
             } else {
-                display.drawPixel(x + i, y + j, BLACK);
+                display.drawPixel(x + i, y + j, MONOOLED_BLACK);
             }
         }
     }
@@ -58,7 +58,7 @@ void DisplayManager::displayTemperature(float temperature) {
   display.setCursor(unitStartX, unitStartY);
   display.print(unitString);
 
-  display.drawFastHLine(30, TEMPERATURE_FONT_HEIGHT + FONT_VERTICAL_PADDING, display.width() - 60, WHITE);
+  display.drawFastHLine(30, TEMPERATURE_FONT_HEIGHT + FONT_VERTICAL_PADDING, display.width() - 60, MONOOLED_WHITE);
 }
 
 
@@ -81,7 +81,7 @@ void DisplayManager::displayIconBottomLeft(const tImage& icon) {
 }
 
 void DisplayManager::displayIconBottomRight(const tImage& icon) {
-    int16_t iconX = display.width() - icon.width - DISPLAY_SIDE_MARGIN;  
+    int16_t iconX = display.width() - icon.width;  
     int16_t iconY = display.height() - icon.height;
 
     draw8BitImage(iconX, iconY, icon);
@@ -102,4 +102,12 @@ void DisplayManager::displayBottomCentre(const String& message) {
     display.setFont(&FreeSans8pt7b);
     display.setCursor(temperatureStartX, display.height() - DISPLAY_SIDE_MARGIN);
     display.print(message);
+}
+
+void DisplayManager::displayOff() {
+  display.clearDisplay();
+}
+
+void DisplayManager::render() {
+  display.display();
 }

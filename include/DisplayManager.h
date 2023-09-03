@@ -18,7 +18,7 @@ public:
     void displayBottomCentre(const String& message);
     void displayOff();
     void render();
-
+    void displayCentre(const String lines[], int numLines);
 protected:
     Adafruit_SH1106G& display;
 
@@ -26,6 +26,8 @@ protected:
     int16_t calculateTextWidth(const String& text, const GFXfont* font);
     int16_t calculateTextHeight(const String& text, const GFXfont* font);
     void draw8BitImage(int16_t x, int16_t y, const tImage& image);
+    void displayChunkCentre(const String& chunk, int16_t startY);
+
 };
 
 #endif

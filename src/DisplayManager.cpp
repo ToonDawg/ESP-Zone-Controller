@@ -1,7 +1,8 @@
 #include "DisplayManager.h"
-#include "LargeFont.h"
-#include "SmallFont.h"
 #include "Icons.h"
+#include <Fonts/FreeSansBold24pt7b.h>
+#include <Fonts/FreeSans9pt7b.h>
+#include <Fonts/FreeSansBold12pt7b.h>
 
 constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;
 constexpr int16_t FONT_VERTICAL_PADDING = 6;
@@ -46,15 +47,15 @@ void DisplayManager::draw8BitImage(int16_t x, int16_t y, const tImage& image) {
 void DisplayManager::displayTemperature(float temperature) {
   String temperatureString = String(temperature, 1);
 
-  int16_t temperatureStartX = calculateTextCenterX(temperatureString, &FreeSansBold25pt7b);
-  display.setFont(&FreeSansBold25pt7b);
+  int16_t temperatureStartX = calculateTextCenterX(temperatureString, &FreeSansBold24pt7b);
+  display.setFont(&FreeSansBold24pt7b);
   display.setCursor(temperatureStartX, TEMPERATURE_FONT_HEIGHT);
   display.print(temperatureString);
 
   String unitString = "C";
-  int16_t unitStartY = TEMPERATURE_FONT_HEIGHT - calculateTextHeight(temperatureString, &FreeSansBold25pt7b) + calculateTextHeight(unitString, &FreeSans8pt7b);
-  int16_t unitStartX = temperatureStartX + calculateTextWidth(temperatureString, &FreeSansBold25pt7b) + 5; 
-  display.setFont(&FreeSans8pt7b);
+  int16_t unitStartY = TEMPERATURE_FONT_HEIGHT - calculateTextHeight(temperatureString, &FreeSansBold24pt7b) + calculateTextHeight(unitString, &FreeSans9pt7b);
+  int16_t unitStartX = temperatureStartX + calculateTextWidth(temperatureString, &FreeSansBold24pt7b) + 5; 
+  display.setFont(&FreeSans9pt7b);
   display.setCursor(unitStartX, unitStartY);
   display.print(unitString);
 
@@ -66,7 +67,7 @@ void DisplayManager::displayBottomLeft(const String& message) {
   int16_t textBoxX, textBoxY; 
   uint16_t textBoxWidth, textBoxHeight;
 
-  display.setFont(&FreeSans8pt7b);
+  display.setFont(&FreeSans9pt7b);
   display.getTextBounds(message, 0, 0, &textBoxX, &textBoxY, &textBoxWidth, &textBoxHeight);
 
   display.setCursor(5, display.height() - DISPLAY_SIDE_MARGIN);
@@ -90,7 +91,7 @@ void DisplayManager::displayBottomRight(const String& message) {
   int16_t textBoxX, textBoxY;
   uint16_t textBoxWidth, textBoxHeight;
 
-  display.setFont(&FreeSans8pt7b);
+  display.setFont(&FreeSans9pt7b);
   display.getTextBounds(message, 0, 0, &textBoxX, &textBoxY, &textBoxWidth, &textBoxHeight);
 
   display.setCursor(display.width() - textBoxWidth - 5, display.height() - DISPLAY_SIDE_MARGIN);
@@ -98,8 +99,8 @@ void DisplayManager::displayBottomRight(const String& message) {
 }
 
 void DisplayManager::displayBottomCentre(const String& message) {
-    int16_t temperatureStartX = calculateTextCenterX(message, &FreeSans8pt7b);
-    display.setFont(&FreeSans8pt7b);
+    int16_t temperatureStartX = calculateTextCenterX(message, &FreeSans9pt7b);
+    display.setFont(&FreeSans9pt7b);
     display.setCursor(temperatureStartX, display.height() - DISPLAY_SIDE_MARGIN);
     display.print(message);
 }
@@ -110,4 +111,26 @@ void DisplayManager::displayOff() {
 
 void DisplayManager::render() {
   display.display();
+}
+
+void DisplayManager::displayCentre(const String lines[], int numLines) {
+  int16_t textHeight = calculateTextHeight("W", &FreeSans9pt7b); // Assuming all characters have roughly the same height
+
+  int16_t totalHeight = textHeight * numLines;
+
+  
+  int16_t startY = (display.height() - totalHeight) / 2 + textHeight; 
+
+  for (int i = 0; i < numLines; i++) {
+    displayChunkCentre(lines[i], startY);
+    startY += textHeight + 5; 
+  }
+}
+
+void DisplayManager::displayChunkCentre(const String& chunk, int16_t startY) {
+  int16_t textWidth = calculateTextWidth(chunk, &FreeSans9pt7b);
+  int16_t textStartX = (display.width() - textWidth) / 2;
+
+  display.setCursor(textStartX, startY);
+  display.print(chunk);
 }

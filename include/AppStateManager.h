@@ -9,7 +9,8 @@ public:
     enum class AppState {
       CURRENT_TEMPERATURE,
       SET_TEMPERATURE,
-      OFF
+      OFF,
+      CONNECTING
     };
 
 private:

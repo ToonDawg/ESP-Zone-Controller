@@ -75,6 +75,13 @@ void setup() {
       appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
   });
 
+  toggleModeButton.attachLongPressStart([] { 
+    appStateManager.setAppState(AppStateManager::AppState::CONNECTING);
+    appStateManager.recordAdjustmentTime();
+
+});
+
+
   toggleDisplayButton.attachClick([] {
     if(appStateManager.getAppState() == AppStateManager::AppState::OFF) {
       appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
@@ -84,16 +91,18 @@ void setup() {
   });
 
   increaseTemperatureButton.attachDuringLongPress([] {
+    appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
     static unsigned long lastChangeTime = 0;
-    if (millis() - lastChangeTime > 300) {
+    if (millis() - lastChangeTime > 200) {
       tempController.adjustTemperature(.5);
       appStateManager.recordAdjustmentTime();
       lastChangeTime = millis();
     }
   });
   decreaseTemperatureButton.attachDuringLongPress([] {
+    appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
     static unsigned long lastChangeTime = 0;
-    if (millis() - lastChangeTime > 300) {
+    if (millis() - lastChangeTime > 200) {
       tempController.adjustTemperature(-.5);
       appStateManager.recordAdjustmentTime();
       lastChangeTime = millis();

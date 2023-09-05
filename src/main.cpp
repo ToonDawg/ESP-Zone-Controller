@@ -10,6 +10,7 @@
 #include "SmallFont.h"
 #include "AppStateManager.h"
 #include <SPI.h>
+#include "BluetoothManager.h"
 
 constexpr int SCREEN_WIDTH = 128;
 constexpr int SCREEN_HEIGHT = 64;
@@ -32,8 +33,8 @@ OneButton toggleModeButton(TOGGLE_MODE_BUTTON_PIN, true);
 OneButton toggleDisplayButton(TOGGLE_DISPLAY_BUTTON_PIN, true);
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64,OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 DisplayManager displayManager(display);
-AppStateManager appStateManager(displayManager, tempController);
-
+BluetoothManager btManager;
+AppStateManager appStateManager(displayManager, tempController, btManager);
 
 constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;
 constexpr int16_t FONT_VERTICAL_PADDING = 6;
@@ -42,6 +43,8 @@ constexpr int16_t DISPLAY_SIDE_MARGIN = 4;
 void setup() {
   Serial.begin(115200);
   Wire.begin();
+  btManager.init();
+
   if(!display.begin()) {
     Serial.println(F("SSD1306 allocation failed"));
     for(;;);

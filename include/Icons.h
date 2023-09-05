@@ -17,5 +17,7 @@ extern const tImage icons8opendoor25;
 extern const tImage icons8opendoor;
 extern const tImage windFlow;
 extern const tImage noWindFlow;
+extern const tImage celciusIcon;
+
 
 #endif // ICONS_H

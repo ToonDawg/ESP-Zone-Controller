@@ -2,7 +2,8 @@
     "files.associations": {
         "string": "cpp",
         "array": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "new": "cpp"
     },
     "cmake.sourceDirectory": "C:/Users/242401/Documents/Source/ESP-Zone-Controller/.pio/libdeps/esp32dev/Adafruit BusIO"
 }

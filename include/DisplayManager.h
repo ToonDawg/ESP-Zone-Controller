@@ -14,6 +14,7 @@ public:
     void displayBottomLeft(const String& message);
     void displayIconBottomLeft(const tImage& icon);
     void displayIconBottomRight(const tImage& icon);
+    void displayIconBottomMiddle(const tImage& icon);
     void displayBottomRight(const String& message);
     void displayBottomCentre(const String& message);
     void displayOff();

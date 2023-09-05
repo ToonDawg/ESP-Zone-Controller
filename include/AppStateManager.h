@@ -3,6 +3,7 @@
 
 #include "DisplayManager.h"
 #include "TemperatureController.h"
+#include "BluetoothManager.h"
 
 class AppStateManager {
 public:
@@ -17,10 +18,11 @@ private:
     AppState currentState;
     DisplayManager& displayManager;
     TemperatureController& temperatureController;
+    BluetoothManager& btManager; 
     unsigned long lastAdjustmentTime = 0;
 
 public:
-    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController);
+    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, BluetoothManager& btMgr);
     void setAppState(AppState state);
     const AppState& getAppState() const;
     void display();

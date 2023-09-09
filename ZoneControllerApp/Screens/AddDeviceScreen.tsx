@@ -2,21 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import { TextInput, Button, List, Surface, IconButton, ActivityIndicator } from 'react-native-paper';
 import { useDevices, DeviceDetail } from '../contexts/DeviceContext'
-import { useBluetooth, BluetoothDevice } from '../hooks/useBluetooth'
+import { useBluetooth, BluetoothDevice, CharacteristicUUIDs } from '../hooks/useBluetooth'
+import { Buffer } from 'buffer'
 
 const transformToDeviceDetail = (device: BluetoothDevice): DeviceDetail => {
   return {
     id: device.id,
-    name: device.name || "Unknown Device",  // Default to "Unknown Device" if name is null
-    mode: false,  // Default value
-    display: false,  // Default value
-    setTemperature: 20,  // Default value
-    currentTemperature: 20,  // Default value
-    airflow: false,  // Default value
-    isEditing: false,  // Default value
+    name: device.name || "Unknown Device",
+    mode: 'Cool',
+    display: false,
+    setTemperature: 20,
+    currentTemperature: 20,
+    airflow: 'Open',
+    isEditing: false,
   };
 };
 
+function decodeBluetoothData(base64Value: string) {
+  const decodedData = Buffer.from(base64Value, 'base64');
+  const dataView = new DataView(decodedData.buffer);
+
+  const currentTemperature = parseFloat(dataView.getFloat32(0, true).toFixed(1));
+  const setTemperature = parseFloat(dataView.getFloat32(4, true).toFixed(1));
+
+  const modeAndMotorState = decodedData[8]; // Ninth byte
+  const mode = (modeAndMotorState & 1) === 1; // True for "Heat", false for "Cool"
+  const airflow = (modeAndMotorState & 2) === 2; // True for "Open", false for "Closed"
+
+  return {
+    currentTemperature: currentTemperature,
+    setTemperature: setTemperature,
+    mode: mode,
+    airflow: airflow,
+  };
+}
 
 const AddDeviceScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [availableDevices, setAvailableDevices] = useState<BluetoothDevice[]>([]);
@@ -24,13 +43,14 @@ const AddDeviceScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { addDevice } = useDevices();
   const [loading, setLoading] = useState(false);
 
-  const { 
-    devices, 
-    isScanning, 
-    startScan, 
+  const {
+    devices,
+    isScanning,
+    startScan,
+    stopScan,
     connectToDevice,
     readCharacteristic,
-    writeCharacteristic 
+    writeCharacteristic
   } = useBluetooth();
 
   useEffect(() => {
@@ -49,15 +69,30 @@ const AddDeviceScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const handleDeviceInteraction = async (item: BluetoothDevice) => {
     const deviceDetail = transformToDeviceDetail(item);
     try {
-      const connectedDevice = await connectToDevice(item.id);
+      let connectedDevice = await connectToDevice(item.id);
 
-      // // Assuming you have the UUIDs for your service and characteristics
-      // const temperatureChar = await readCharacteristic(connectedDevice, "YOUR_SERVICE_UUID", "YOUR_TEMPERATURE_CHARACTERISTIC_UUID");
-      // deviceDetail.currentTemperature = parseFloat(temperatureChar.value!); // Convert and assign
+      let attempts = 0;
+      const MAX_ATTEMPTS = 10;
+      while (!connectedDevice.isConnected() && attempts < MAX_ATTEMPTS) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        connectedDevice = await connectToDevice(item.id);
+        attempts++;
+      }
 
-      // // Now, send WiFi credentials
-      // const wifiCredentials = "SSID:PASSWORD";  // Modify this according to your app's logic
-      // await writeCharacteristic(connectedDevice, "YOUR_SERVICE_UUID", "YOUR_WIFI_CHARACTERISTIC_UUID", wifiCredentials);
+      if (!connectedDevice.isConnected()) {
+        throw new Error("Max connection attempts reached");
+      }
+
+      const temperatureChar = await readCharacteristic(connectedDevice, CharacteristicUUIDs.SERVICE_UUID, CharacteristicUUIDs.TEMPERATURE_CHARACTERISTIC_UUID);
+      const decodedData = decodeBluetoothData(temperatureChar.value || '');
+
+      deviceDetail.currentTemperature = decodedData.currentTemperature;
+      deviceDetail.setTemperature = decodedData.setTemperature;
+      deviceDetail.mode = decodedData.mode ? 'Heat' : 'Cool';
+      deviceDetail.airflow = decodedData.airflow ? 'Open' : 'Closed';
+
+      const wifiCredentials = "SSID:PASSWORD";
+      await writeCharacteristic(connectedDevice, CharacteristicUUIDs.SERVICE_UUID, CharacteristicUUIDs.WIFI_CHARACTERISTIC_UUID, wifiCredentials);
 
       addDevice(deviceDetail);
       navigation.goBack();
@@ -66,6 +101,7 @@ const AddDeviceScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       // Handle errors, show error messages, etc.
     }
   };
+
 
   return (
     <Surface style={styles.container}>

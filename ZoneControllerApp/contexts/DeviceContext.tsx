@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState } from 'react';
 
 export type DeviceDetail = {
-    id: string;
-    name: string;
-    mode: boolean;
-    display: boolean;
-    setTemperature: number;
-    currentTemperature: number;
-    airflow: boolean;
-    isEditing: boolean;
-  };
+  id: string;
+  name: string;
+  mode: "Heat" | "Cool";
+  display: boolean;
+  setTemperature: number;
+  currentTemperature: number;
+  airflow: "Open" | "Closed";
+  isEditing: boolean;
+};
+
 
 type DeviceContextType = {
     devices: DeviceDetail[];

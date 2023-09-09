@@ -33,7 +33,7 @@ OneButton toggleModeButton(TOGGLE_MODE_BUTTON_PIN, true);
 OneButton toggleDisplayButton(TOGGLE_DISPLAY_BUTTON_PIN, true);
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64,OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 DisplayManager displayManager(display);
-BluetoothManager btManager;
+BluetoothManager btManager(tempController);
 AppStateManager appStateManager(displayManager, tempController, btManager);
 
 constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;
@@ -44,6 +44,7 @@ void setup() {
   Serial.begin(115200);
   Wire.begin();
   btManager.init();
+  btManager.setupCharacteristic();
 
   if(!display.begin()) {
     Serial.println(F("SSD1306 allocation failed"));

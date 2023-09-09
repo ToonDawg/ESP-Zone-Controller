@@ -2,18 +2,23 @@
 #define BluetoothManager_h
 
 #include <NimBLEDevice.h>
+#include "TemperatureController.h"
 
 class BluetoothManager {
-    NimBLECharacteristic* pWifiDetailsCharacteristic;
+private:
+    NimBLECharacteristic* pWifiDetailsCharacteristic = nullptr;
+    NimBLECharacteristic* pTemperatureCharacteristic = nullptr;
+    TemperatureController& tempController;
 
 public:
-    BluetoothManager();
+    BluetoothManager(TemperatureController& controller);
     void init();
     bool isConnected();
     void startAdvertising();
     void stopAdvertising();
     void setupCharacteristic();
-    static void onWrite(NimBLECharacteristic* pCharacteristic);
+    void onWrite(NimBLECharacteristic* pCharacteristic);
+    void onRead(NimBLECharacteristic* pCharacteristic);
 };
 
 class TempControlBTCallbacks: public NimBLEServerCallbacks {

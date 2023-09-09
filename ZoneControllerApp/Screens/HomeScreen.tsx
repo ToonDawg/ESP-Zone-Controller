@@ -6,7 +6,7 @@ import { useDevices, DeviceDetail } from '../contexts/DeviceContext'
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { RootStackParamList } from '../App';
-
+import { useBluetooth } from '../hooks/useBluetooth';
 
 type HomeScreenNavigationProp = StackNavigationProp<
     RootStackParamList,
@@ -18,6 +18,8 @@ type Props = {
 };
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
+
+    const { disconnectFromDevice } = useBluetooth();
     const { devices, updateDevices } = useDevices();
     const [tempName, setTempName] = useState<string>('');
     const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -43,7 +45,13 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         });
         updateDevices(updatedDevices);
     };
-    const deleteDevice = (id: string) => {
+
+    const deleteDevice = async (id: string) => {
+        try {
+            await disconnectFromDevice(id);
+        } catch (error) {
+            console.error("Error disconnecting device:", error);
+        }
         const updatedDevices = devices.filter(device => device.id !== id);
         updateDevices(updatedDevices);
         setDeleteDialogVisible(false);
@@ -51,7 +59,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
     const renderRightActions = (id: string) => {
         return (
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.centeredButton}
                 onPress={() => {
                     setDeviceToDelete(devices.find(device => device.id === id) || null);
@@ -65,7 +73,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
         );
     };
-    
+
 
     return (
         <View style={styles.container}>
@@ -112,7 +120,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             />
             <Portal>
                 <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
-                    <Dialog.Title>Confirm Deletion</Dialog.Title>
+                    <Dialog.Title>Confirm</Dialog.Title>
                     <Dialog.Content>
                         <Text>Are you sure you want to delete {deviceToDelete?.name}?</Text>
                     </Dialog.Content>

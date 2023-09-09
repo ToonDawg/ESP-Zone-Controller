@@ -19,7 +19,16 @@ private:
     DisplayManager& displayManager;
     TemperatureController& temperatureController;
     BluetoothManager& btManager; 
-    unsigned long lastAdjustmentTime = 0;
+
+    bool advertisingStarted;
+    unsigned long lastAdjustmentTime;
+
+    void displayCurrentTemperature();
+    void displaySetTemperature();
+    void displayOff();
+    void displayConnecting();
+    void manageBluetoothStatus();
+    void handleStateTimeouts();
 
 public:
     AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, BluetoothManager& btMgr);

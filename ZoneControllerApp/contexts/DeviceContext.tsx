@@ -1,14 +1,26 @@
 import React, { createContext, useContext, useState } from 'react';
+import { Mode } from '../Screens/DeviceScreen';
 
 export type DeviceDetail = {
   id: string;
   name: string;
-  mode: "Heat" | "Cool";
+  mode: Mode;
   display: boolean;
   setTemperature: number;
   currentTemperature: number;
   airflow: "Open" | "Closed";
   isEditing: boolean;
+};
+
+const defaultDevice: DeviceDetail = {
+  id: 'default-001',
+  name: 'Default Device',
+  mode: 'Heating',
+  display: true,
+  setTemperature: 24,
+  currentTemperature: 24,
+  airflow: 'Open',
+  isEditing: false,
 };
 
 
@@ -25,10 +37,9 @@ type DeviceProviderProps = {
 };
 
 export const DeviceProvider: React.FC<DeviceProviderProps> = ({ children }) => {
-  const [devices, setDevices] = useState<DeviceDetail[]>([]);
+  const [devices, setDevices] = useState<DeviceDetail[]>([defaultDevice]);
 
   const addDevice = (device: DeviceDetail) => {
-    // Avoid adding duplicates
     if (!devices.some(d => d.id === device.id)) {
       setDevices(prevDevices => [...prevDevices, device]);
     }

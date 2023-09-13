@@ -1,14 +1,13 @@
 import React from 'react';
-import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { enableScreens } from 'react-native-screens';
-import { Provider as PaperProvider, MD3LightTheme as PaperDefaultTheme, MD3DarkTheme as PaperDarkTheme, IconButton } from 'react-native-paper';
-import { DeviceDetail, DeviceProvider } from './contexts/DeviceContext'
-
-
+import { Provider as PaperProvider, MD3DarkTheme as PaperDarkTheme, IconButton } from 'react-native-paper';
+import { DeviceProvider } from './contexts/DeviceContext'
 import HomeScreen from './Screens/HomeScreen';
 import AddDeviceScreen from './Screens/AddDeviceScreen';
 import { DeviceScreen } from './Screens/DeviceScreen';
+import { DeviceDetail } from './types/types';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -22,6 +21,8 @@ const CombinedDarkTheme = {
   colors: {
     ...PaperDarkTheme.colors,
     ...NavigationDarkTheme.colors,
+    primary: '#3498db', 
+    accent: '#f1c40f',
   },
 };
 

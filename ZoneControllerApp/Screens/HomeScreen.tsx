@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
-import { List, FAB, TextInput, IconButton, Portal, Dialog, Button, Text } from 'react-native-paper'
-import { StackNavigationProp } from '@react-navigation/stack';
-import { useDevices, DeviceDetail } from '../contexts/DeviceContext'
-import Swipeable from 'react-native-gesture-handler/Swipeable';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { FlatGrid } from 'react-native-super-grid';
+import { Card, IconButton, TextInput, Portal, Dialog, Button, FAB } from 'react-native-paper';
 import { RootStackParamList } from '../App';
+import { StackNavigationProp } from '@react-navigation/stack';
+import {  useDevices } from '../contexts/DeviceContext';
 import { useBluetooth } from '../hooks/useBluetooth';
+import { DeviceCard } from '../components/DeviceCard';
+import { DeviceDetail } from '../types/types';
 
 type HomeScreenNavigationProp = StackNavigationProp<
     RootStackParamList,
@@ -18,7 +19,6 @@ type Props = {
 };
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
-
     const { disconnectFromDevice } = useBluetooth();
     const { devices, updateDevices } = useDevices();
     const [tempName, setTempName] = useState<string>('');
@@ -57,62 +57,25 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         setDeleteDialogVisible(false);
     };
 
-    const renderRightActions = (id: string) => {
-        return (
-            <TouchableOpacity
-                style={styles.centeredButton}
-                onPress={() => {
-                    setDeviceToDelete(devices.find(device => device.id === id) || null);
-                    setDeleteDialogVisible(true);
-                }}
-            >
-                <IconButton
-                    icon="trash-can"
-                    size={24}
-                />
-            </TouchableOpacity>
-        );
-    };
-
-
     return (
         <View style={styles.container}>
-            <FlatList
+            <FlatGrid
+                itemDimension={160}
                 data={devices}
                 renderItem={({ item }) => (
-                    <Swipeable renderRightActions={() => renderRightActions(item.id)}>
-                        {item.isEditing ? (
-                            <>
-                                <TextInput
-                                    label="Device Name"
-                                    value={tempName}
-                                    onChangeText={setTempName}
-                                    mode="outlined"
-                                    onEndEditing={() => saveName(item.id)}
-                                />
-                            </>
-                        ) : (
-                            <List.Item
-                                title={item.name}
-                                description={`${item.setTemperature}°C`}
-                                right={() => (
-                                    <IconButton
-                                        icon="pencil"
-                                        size={24}
-                                        style={{ marginRight: -20 }}
-                                        onPress={(e) => {
-                                            e.stopPropagation();
-                                            startEditing(item.id, item.name);
-                                        }}
-                                    />
-                                )}
-                                onPress={() => navigation.navigate('Device', { deviceDetail: item })}
-                            />
-                        )}
-                    </Swipeable>
+                    <DeviceCard
+                        device={item}
+                        onEdit={(device) => startEditing(device.id, device.name)}
+                        onPress={(device) => navigation.navigate('Device', { deviceDetail: device })}
+                        onLongPress={(device) => {
+                            setDeviceToDelete(device);
+                            setDeleteDialogVisible(true);
+                        }}
+                    />
                 )}
                 keyExtractor={(item) => item.id}
             />
+
             <FAB
                 style={styles.fab}
                 icon="plus"
@@ -137,8 +100,10 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
         backgroundColor: '#121212',
+    },
+    card: {
+        margin: 10,
     },
     listItem: {
         flexDirection: 'row',
@@ -162,7 +127,7 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        margin: 20,
+        margin: 20,  // The margin has been updated to 20 as it was different between the two styles
         right: 0,
         bottom: 0,
     },
@@ -172,5 +137,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 });
+
 
 export default HomeScreen;

@@ -1,20 +1,11 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Mode } from '../Screens/DeviceScreen';
+import { DeviceDetail } from '../types/types';
 
-export type DeviceDetail = {
-  id: string;
-  name: string;
-  mode: Mode;
-  display: boolean;
-  setTemperature: number;
-  currentTemperature: number;
-  airflow: "Open" | "Closed";
-  isEditing: boolean;
-};
 
-const defaultDevice: DeviceDetail = {
+
+const defaultDevice1: DeviceDetail = {
   id: 'default-001',
-  name: 'Default Device',
+  name: 'Zone Controller',
   mode: 'Heating',
   display: true,
   setTemperature: 24,
@@ -23,6 +14,16 @@ const defaultDevice: DeviceDetail = {
   isEditing: false,
 };
 
+const defaultDevice2: DeviceDetail = {
+  id: 'default-002',
+  name: 'Lounge Room',
+  mode: 'Cooling',
+  display: true,
+  setTemperature: 18,
+  currentTemperature: 22,
+  airflow: 'Open',
+  isEditing: false,
+};
 
 type DeviceContextType = {
     devices: DeviceDetail[];
@@ -37,7 +38,7 @@ type DeviceProviderProps = {
 };
 
 export const DeviceProvider: React.FC<DeviceProviderProps> = ({ children }) => {
-  const [devices, setDevices] = useState<DeviceDetail[]>([defaultDevice]);
+  const [devices, setDevices] = useState<DeviceDetail[]>([defaultDevice1, defaultDevice2]);
 
   const addDevice = (device: DeviceDetail) => {
     if (!devices.some(d => d.id === device.id)) {

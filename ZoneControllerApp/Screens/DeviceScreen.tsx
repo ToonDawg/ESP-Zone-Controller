@@ -3,8 +3,11 @@ import { View, StyleSheet, Animated } from 'react-native';
 import { Text, IconButton, Surface } from 'react-native-paper';
 import { RouteProp } from '@react-navigation/native';
 import CircularSlider from '../components/CircularSlider';
-import { DeviceDetail, useDevices } from '../contexts/DeviceContext';
+import { useDevices } from '../contexts/DeviceContext';
 import { RootStackParamList } from '../App';
+import ModeButton from '../components/ModeButton';
+import { DeviceDetail, Mode, modeColors } from '../types/types';
+import DescriptorValueDisplay from '../components/DescriptorValueDisplay';
 
 const MIN_TEMP = 12;
 const MAX_TEMP = 36;
@@ -13,34 +16,23 @@ type DeviceScreenProps = {
     route: RouteProp<RootStackParamList, 'Device'>;
 };
 
-export type Mode = 'Heating' | 'Cooling' | 'Dry';
-
-const modeColors: Record<Mode, string> = {
-    'Heating': '#FF5733',
-    'Cooling': '#33A6FF',
-    'Dry': '#FFD733'
-};
-
-
 export const DeviceScreen: React.FC<DeviceScreenProps> = ({ route }) => {
     const { deviceDetail } = route.params;
     const { devices, updateDevices } = useDevices();
 
     const device = devices.find(d => d.id === deviceDetail.id)!;
 
-    const [selectedMode, setSelectedMode] = useState<Mode>(device.mode);
     const heatingWidth = React.useRef(new Animated.Value(1)).current;
     const coolingWidth = React.useRef(new Animated.Value(1)).current;
     const dryWidth = React.useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
-        handleModeChange(selectedMode);
+        handleModeChange(device.mode);
     }, []);
 
 
     const handleModeChange = (mode: Mode) => {
-        setSelectedMode(mode);
-
+        updateDevice('mode', mode);
         const animations: Record<Mode, [Animated.Value, number]> = {
             'Heating': [heatingWidth, mode === 'Heating' ? 1.1 : 1],
             'Cooling': [coolingWidth, mode === 'Cooling' ? 1.1 : 1],
@@ -52,6 +44,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ route }) => {
         );
 
         Animated.parallel(animatedValues).start();
+
     };
 
     const updateDevice = (key: keyof DeviceDetail, value: any) => {
@@ -64,20 +57,28 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ route }) => {
         <Surface style={styles.container}>
             <Text style={styles.title}>AC Mate</Text>
             <Text style={styles.area}>{device.name}</Text>
+            <DescriptorValueDisplay
+                data={[
+                    { desc: 'Current Temp.', value: '22°C' },
+                    { desc: 'Last Updated:', value: '2 mins ago' }
+                ]}
+            />
+            <View style={{ flex: 1 }} />
             <View style={styles.tempWidget}>
                 <CircularSlider
                     step={1}
+                    radius={120}
                     min={MIN_TEMP}
                     max={MAX_TEMP}
                     value={device.setTemperature}
                     onChange={(value: number) => updateDevice('setTemperature', value)}
                     strokeWidth={10}
-                    buttonBorderColor={modeColors[selectedMode]}
+                    buttonBorderColor={modeColors[device.mode]}
                     buttonFillColor="#fff"
                     buttonStrokeWidth={2}
                     openingRadian={1}
                     buttonRadius={13}
-                    linearGradient={[{ stop: '0%', color: modeColors[selectedMode] }, { stop: '100%', color: modeColors[selectedMode] }]}
+                    linearGradient={[{ stop: '0%', color: modeColors[device.mode] }, { stop: '100%', color: modeColors[device.mode] }]}
                 />
                 <View style={styles.temperatureControl}>
                     <IconButton
@@ -90,21 +91,50 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ route }) => {
                         onPress={() => device.setTemperature < MAX_TEMP && updateDevice('setTemperature', device.setTemperature + 1)}
                     />
                 </View>
+                <Text style={styles.minTemp}>12°</Text>
+                <Text style={styles.maxTemp}>36°</Text>
             </View>
+            <Text style={styles.area}>Mode</Text>
             <View style={styles.buttonContainer}>
-                <Animated.View style={[styles.modeButton, { width: heatingWidth.interpolate({ inputRange: [1, 1.1], outputRange: ['25%', '45%'] }) }]}>
-                    <IconButton icon="weather-sunny" iconColor={modeColors['Heating']} onPress={() => handleModeChange('Heating')} />
-                    {selectedMode === 'Heating' && <Text>Heating</Text>}
-                </Animated.View>
-                <Animated.View style={[styles.modeButton, { width: coolingWidth.interpolate({ inputRange: [1, 1.1], outputRange: ['25%', '45%'] }) }]}>
-                    <IconButton icon="snowflake" iconColor={modeColors['Cooling']} onPress={() => handleModeChange('Cooling')} />
-                    {selectedMode === 'Cooling' && <Text>Cooling</Text>}
-                </Animated.View>
-                <Animated.View style={[styles.modeButton, { width: dryWidth.interpolate({ inputRange: [1, 1.1], outputRange: ['25%', '45%'] }) }]}>
-                    <IconButton icon="water" iconColor={modeColors['Dry']} onPress={() => handleModeChange('Dry')} />
-                    {selectedMode === 'Dry' && <Text>Dry</Text>}
-                </Animated.View>
+                <ModeButton
+                    mode="Heating"
+                    iconName="weather-sunny"
+                    activeMode={device.mode}
+                    handleModeChange={handleModeChange}
+                    widthAnimation={heatingWidth}
+                />
+                <ModeButton
+                    mode="Cooling"
+                    iconName="snowflake"
+                    activeMode={device.mode}
+                    handleModeChange={handleModeChange}
+                    widthAnimation={coolingWidth}
+                />
+                <ModeButton
+                    mode="Dry"
+                    iconName="water"
+                    activeMode={device.mode}
+                    handleModeChange={handleModeChange}
+                    widthAnimation={dryWidth}
+                />
             </View>
+            <Text style={styles.area}>Power</Text>
+            <View style={styles.buttonContainer}>
+                <View style={styles.buttonWrapperLeft}>
+                    <IconButton
+                        icon={device.display ? "monitor" : "monitor-off"}
+                        onPress={() => updateDevice('display', !device.display)}
+                    />
+                </View>
+
+                <View style={styles.buttonWrapperRight}>
+                    <IconButton
+                        icon={device.airflow === "Open" ? "fan" : "fan-off"}
+                        onPress={() => updateDevice('airflow', device.airflow === "Open" ? "Closed" : "Open")}
+                    />
+                </View>
+            </View>
+
         </Surface>
     )
 };
@@ -118,19 +148,14 @@ const styles = StyleSheet.create({
     modeButton: {
         borderRadius: 10,
         elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        flexDirection: 'column',
+        height: 70,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 5,
         backgroundColor: '#2c2c2c',
     },
     tempWidget: {
-        flex: 1,
-        padding: 20,
+
         backgroundColor: '#121212',
         alignItems: 'center',
     },
@@ -140,22 +165,60 @@ const styles = StyleSheet.create({
     },
     area: {
         fontSize: 16,
-        marginBottom: 20,
+        marginBottom: 5,
         color: '#bbb',
     },
     temperatureControl: {
         position: 'absolute',
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 90
+        marginTop: 100
     },
     temperatureText: {
         color: '#f5f5f5',
-        fontSize: 30,
+        fontSize: 40,
+        fontWeight: 'bold'
     },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        width: '100%',
     },
+    buttonWrapperLeft: {
+        flex: 1,
+        borderRadius: 10,
+        elevation: 5,
+        height: 70,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#2c2c2c',
+        marginRight: 5,
+    },
+
+    buttonWrapperRight: {
+        flex: 1,
+        borderRadius: 10,
+        elevation: 5,
+        height: 70,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#2c2c2c',
+        marginLeft: 5,
+    },
+    minTemp: {
+        position: 'absolute',
+        marginTop: 200,
+        left: 75,
+        fontSize: 12
+    },
+    maxTemp: {
+        position: 'absolute',
+        marginTop: 200,
+        right: 75,
+        fontSize: 12
+    }
+
+
 });

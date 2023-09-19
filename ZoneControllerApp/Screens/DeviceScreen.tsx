@@ -8,6 +8,7 @@ import { RootStackParamList } from '../App';
 import ModeButton from '../components/ModeButton';
 import { DeviceDetail, Mode, modeColors } from '../types/types';
 import DescriptorValueDisplay from '../components/DescriptorValueDisplay';
+import { sendCommandToDevice } from '../services/AzureIoTHubService'
 
 const MIN_TEMP = 12;
 const MAX_TEMP = 36;
@@ -88,7 +89,12 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ route }) => {
                     <Text style={styles.temperatureText}>{device.setTemperature}°C</Text>
                     <IconButton
                         icon="plus"
-                        onPress={() => device.setTemperature < MAX_TEMP && updateDevice('setTemperature', device.setTemperature + 1)}
+                        onPress={() => {
+                            if (device.setTemperature < MAX_TEMP) {
+                                updateDevice('setTemperature', device.setTemperature + 1);
+                                sendCommandToDevice('INCREASE_TEMPERATURE', { newValue: device.setTemperature + 1 });
+                            }
+                        }}
                     />
                 </View>
                 <Text style={styles.minTemp}>12°</Text>

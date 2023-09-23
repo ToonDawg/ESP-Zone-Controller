@@ -56,17 +56,17 @@ const App: React.FC = () => {
               name="Device"
               component={DeviceScreen}
               options={({ navigation }) => ({
-                title: 'Comfort Control', // Temperature Adjust, Comfort Settings
+                title: 'Comfort Control',
                 headerTitleAlign: 'center',
                 headerRight: () => (
                   <IconButton
-                    icon="cog-outline" // or any other icon you want
-                    size={24} // adjust as needed
+                    icon="cog-outline" 
+                    size={24} 
                     onPress={() => {
-                      // handle what happens when the icon is pressed
-                      navigation.navigate('Settings'); // example: navigate to settings screen
+
+                      navigation.navigate('Settings');
                     }}
-                    style={{ marginRight: 10 }} // to give it some space from the right edge
+                    style={{ marginRight: 10 }}
                   />
                 )
               })}

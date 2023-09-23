@@ -1,19 +1,47 @@
-// var clientFromConnectionString = require('azure-iot-device-mqtt').clientFromConnectionString;
-// var Message = require('azure-iot-device').Message;
+import axios from 'axios';
+import Config from "react-native-config";
 
-// // Device connection string from Azure Portal
-// var client = clientFromConnectionString(connectionString);
+export type DevicePayload = {
+  deviceId: string,
+  setTemperature: number,
+  currentTemperature: number,
+  currentMode: number,
+  currentMotorState: number,
+  displayPowerState: number
+}
 
+export async function fetchIotDevicesDataByIds(deviceIds: string[]): Promise<DevicePayload[]> {
+  const url = `https://zonecontrollerdev.azurewebsites.net/api/GetIotDevicesDataFunction`;
+  const params = {
+    code: Config.API_KEY,
+    deviceIds: deviceIds.join(',')
+  };
 
-// interface Payload {
-//   newValue?: number;
-//   [key: string]: any;
-// }
+  try {
+    const response = await axios.get(url, { params });
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching IoT devices data:', error);
+    throw error;
+  }
+}
 
-// export const sendCommandToDevice = (command: string, payload: Payload = {}): void => {
-//     const messageContent: Payload = { command, ...payload };
-//     const message: Message = new Message(JSON.stringify(messageContent));
-//     client.sendEvent(message, (err) => {
-//         if (err) console.error('Failed to send command:', err);
-//     });
-// }
+export async function updateIotDeviceData(deviceDetails: DevicePayload) {
+  const url = `https://zonecontrollerdev.azurewebsites.net/api/PostIotDeviceDataFunction?deviceId=${deviceDetails.deviceId}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-functions-key': Config.API_KEY
+  };
+
+  try {
+    const response = await axios.post(url, deviceDetails, {
+      headers: headers
+    });
+
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating IoT device data:', error);
+  }
+}

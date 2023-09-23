@@ -3,3 +3,5 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+ZoneControllerApp/.env
+ESP32/include/iot_configs.h

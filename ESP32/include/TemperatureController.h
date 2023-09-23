@@ -38,16 +38,19 @@ private:
 public:
     TemperatureController(float initialTemp, TemperatureSensor& sensor);
     void toggleMode();
-    const char* getMode() const;
+    const char* getMode();
     const char* getMotorState() const;
     void toggleMotorState();
     void adjustTemperature(float amount);
+    void setSetTemperature(float amount);
+    void setMode(Mode mode);
+    void setMotorState(MotorState motorState);
     float getSetTemperature() const;
     float getCurrentTemperature();
     void regulateTemperature();
     const tImage& getModeIcon() const;
     const tImage& getMotorStateIcon() const;
-    TelemetryData getTelemetryData() const;
+    TelemetryData getTelemetryData();
 };
 
 #endif // TEMPERATURE_CONTROLLER_H

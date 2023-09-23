@@ -37,8 +37,7 @@ Adafruit_SH1106G display = Adafruit_SH1106G(128, 64,OLED_MOSI, OLED_CLK, OLED_DC
 DisplayManager displayManager(display);
 BluetoothManager btManager(tempController);
 AppStateManager appStateManager(displayManager, tempController, btManager);
-AzureIoTManager azureIoTManager;
-
+AzureIoTManager azureIoTManager(tempController);
 constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;
 constexpr int16_t FONT_VERTICAL_PADDING = 6;
 constexpr int16_t DISPLAY_SIDE_MARGIN = 4;
@@ -134,5 +133,4 @@ void loop() {
   display.clearDisplay();
   appStateManager.display();
 
-  azureIoTManager.update(tempController.getTelemetryData());
 }

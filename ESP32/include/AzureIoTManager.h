@@ -27,16 +27,47 @@
 #define UNIX_TIME_NOV_13_2017 1510592825
 #define GMT_OFFSET_SECS (PST_TIME_ZONE * 3600)
 #define GMT_OFFSET_SECS_DST ((PST_TIME_ZONE + PST_TIME_ZONE_DAYLIGHT_SAVINGS_DIFF) * 3600)
+#define METHOD_POST_PREFIX "$iothub/methods/POST/"
+#define METHOD_RID_PREFIX "/?$rid="
 
-class AzureIoTManager {
-public:
-    AzureIoTManager();
-    ~AzureIoTManager();
-    void begin();
-    void update(const TelemetryData& data); 
-    static void requestTelemetrySend() { sendTelemetryOnRequest = true; }
+class AzureIoTManager
+{
 private:
-    static bool sendTelemetryOnRequest; //RIP for testing
+    esp_mqtt_client_handle_t mqtt_client;
+    az_iot_hub_client client;
+    char incoming_data[INCOMING_DATA_BUFFER_SIZE];
+    const char *host = IOT_CONFIG_IOTHUB_FQDN;
+    const char *device_id = IOT_CONFIG_DEVICE_ID;
+    char mqtt_client_id[128];
+    char mqtt_username[128];
+    char mqtt_password[200];
+    const char *mqtt_broker_uri = "mqtts://" IOT_CONFIG_IOTHUB_FQDN;
+    uint8_t sas_signature_buffer[256];
+    const int mqtt_port = AZ_IOT_DEFAULT_MQTT_CONNECT_PORT;
+    uint32_t telemetry_send_count = 0;
+    char telemetry_topic[128];
+    unsigned long next_telemetry_send_time_ms = 0;
+    AzIoTSasToken sasToken;
+    TemperatureController& tempController;
+    esp_mqtt_client_config_t mqtt_config;
+
+
+public:
+    AzureIoTManager(TemperatureController& tempController);
+    void begin();
+    void update(const TelemetryData &data);
+    void sendTelemetry(const TelemetryData &data);
+    void sendResponse(char *method_id, String &telemetryPayload);
+
+private:
+    void handleGetDataMethod(char *method_id, char *payload, unsigned int length);
+    void handleUpdateDataMethod(char *method_id, char *payload, unsigned int length);
+    void subscribeToTopic(const char *topic, const char *description);
+    static esp_err_t mqtt_event_handler_static(esp_mqtt_event_handle_t event);
+    esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event);
+    int initializeMqttClient();
+    void initializeIoTHubClient();
+    void handleMethod(const esp_mqtt_event_handle_t event);
 };
 
 #endif

@@ -5,7 +5,11 @@
         "string_view": "cpp",
         "new": "cpp",
         "system_error": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "memory_resource": "cpp",
+        "memory": "cpp",
+        "functional": "cpp",
+        "type_traits": "cpp"
     },
     "cmake.sourceDirectory": "C:/Users/242401/Documents/Source/ESP-Zone-Controller/.pio/libdeps/esp32dev/Adafruit BusIO"
 }

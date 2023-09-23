@@ -15,6 +15,11 @@ float TemperatureController::getSetTemperature() const
     return setTemperature;
 }
 
+void TemperatureController::setSetTemperature(float amount)
+{
+    setTemperature = amount;
+}
+
 float TemperatureController::getCurrentTemperature()
 {
     unsigned long currentTime = millis();
@@ -24,6 +29,11 @@ float TemperatureController::getCurrentTemperature()
         currentTemperature = temperatureSensor.readTemperature();
     }
     return currentTemperature;
+}
+
+void TemperatureController::setMode(Mode mode)
+{
+    currentMode = mode;
 }
 
 void TemperatureController::toggleMode()
@@ -36,7 +46,7 @@ void TemperatureController::toggleMotorState()
     currentMotorState = (currentMotorState == MotorState::Open) ? MotorState::Closed : MotorState::Open;
 }
 
-const char *TemperatureController::getMode() const
+const char *TemperatureController::getMode()
 {
     return (currentMode == Mode::Heat) ? "Heat" : "Cool";
 }
@@ -54,6 +64,16 @@ const tImage& TemperatureController::getModeIcon() const
 const tImage& TemperatureController::getMotorStateIcon() const
 {
     return (currentMotorState == MotorState::Open) ? windFlow : noWindFlow;
+}
+
+TelemetryData TemperatureController::getTelemetryData()
+{
+    TelemetryData data;
+    data.setTemperature = setTemperature;
+    data.currentTemperature = currentTemperature;
+    data.currentMode = currentMode;
+    data.currentMotorState = currentMotorState;
+    return data;
 }
 
 
@@ -76,6 +96,11 @@ void TemperatureController::regulateTemperature()
     {
         toggleMotorState();
     }
+}
+
+void TemperatureController::setMotorState(MotorState motorState)
+{
+    currentMotorState = motorState;
 }
 
 bool TemperatureController::shouldToggleForHeat(float currentTemp) const
@@ -104,12 +129,4 @@ bool TemperatureController::shouldToggleForCool(float currentTemp) const
     return false;
 }
 
-TelemetryData TemperatureController::getTelemetryData() const {
-    TelemetryData data;
-    data.setTemperature = setTemperature;
-    data.currentTemperature = currentTemperature;
-    data.currentMode = currentMode;
-    data.currentMotorState = currentMotorState;
-    return data;
-}
 

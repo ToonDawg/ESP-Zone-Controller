@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, RefreshControl } from 'react-native';
 import { FlatGrid } from 'react-native-super-grid';
 import { Card, IconButton, TextInput, Portal, Dialog, Button, FAB } from 'react-native-paper';
 import { RootStackParamList } from '../App';
 import { StackNavigationProp } from '@react-navigation/stack';
-import {  useDevices } from '../contexts/DeviceContext';
+import { useDevices } from '../contexts/DeviceContext';
 import { useBluetooth } from '../hooks/useBluetooth';
 import { DeviceCard } from '../components/DeviceCard';
 import { DeviceDetail } from '../types/types';
+import { DevicePayload, fetchIotDevicesDataByIds } from '../services/AzureIoTHubService';
+
+const MODE_HEATING = 0;
+const AIRFLOW_OPEN = 0;
 
 type HomeScreenNavigationProp = StackNavigationProp<
     RootStackParamList,
@@ -21,30 +25,13 @@ type Props = {
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
     const { disconnectFromDevice } = useBluetooth();
     const { devices, updateDevices } = useDevices();
-    const [tempName, setTempName] = useState<string>('');
     const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
     const [deviceToDelete, setDeviceToDelete] = useState<DeviceDetail | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const startEditing = (id: string, name: string) => {
-        setTempName(name);
-        const updatedDevices = devices.map((device: DeviceDetail) => {
-            if (device.id === id) {
-                return { ...device, isEditing: true };
-            }
-            return device;
-        });
-        updateDevices(updatedDevices);
-    };
-
-    const saveName = (id: string) => {
-        const updatedDevices = devices.map((device: DeviceDetail) => {
-            if (device.id === id) {
-                return { ...device, name: tempName, isEditing: false };
-            }
-            return device;
-        });
-        updateDevices(updatedDevices);
-    };
+    useEffect(() => {
+        fetchAndUpdateDevices();
+    }, []);
 
     const deleteDevice = async (id: string) => {
         try {
@@ -57,6 +44,44 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         setDeleteDialogVisible(false);
     };
 
+    const parseDeviceData = (data: any): Partial<DeviceDetail> => ({
+        setTemperature: data.setTemperature,
+        currentTemperature: data.currentTemperature,
+        mode: data.currentMode === MODE_HEATING ? 'Heating' : 'Cooling',
+        airflow: data.currentMotorState === AIRFLOW_OPEN ? "Open" : "Closed"
+    });
+
+    const fetchAndUpdateDevices = async () => {
+        try {
+            const deviceIds = devices.map(device => device.id);
+            const updatedDevicesData: DevicePayload[] = await fetchIotDevicesDataByIds(deviceIds);
+            console.log(updatedDevicesData);
+            
+    
+            if (updatedDevicesData) {
+                const updatedDevicesList = devices.map(device => {
+                    const updatedData = updatedDevicesData.find(d => d.deviceId === device.id);
+                    if (updatedData) {
+                        const parsedData = parseDeviceData(updatedData);
+                        return { ...device, ...parsedData };
+                    }
+                    return device;
+                });
+    
+                updateDevices(updatedDevicesList);
+            }
+        } catch (error) {
+            console.error("Error fetching and updating devices data:", error);
+        }
+    };
+    
+
+    const onRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        await fetchAndUpdateDevices();
+        setIsRefreshing(false);
+    }, []);
+
     return (
         <View style={styles.container}>
             <FlatGrid
@@ -65,15 +90,22 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                 renderItem={({ item }) => (
                     <DeviceCard
                         device={item}
-                        onEdit={(device) => startEditing(device.id, device.name)}
+                        onEdit={(device) => {
+                            // handle edit action
+                        }}
                         onPress={(device) => navigation.navigate('Device', { deviceDetail: device })}
                         onLongPress={(device) => {
-                            setDeviceToDelete(device);
-                            setDeleteDialogVisible(true);
+                            // handle long press action
                         }}
                     />
                 )}
                 keyExtractor={(item) => item.id}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={onRefresh}
+                    />
+                }
             />
 
             <FAB

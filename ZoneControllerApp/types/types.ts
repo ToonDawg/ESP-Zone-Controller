@@ -12,6 +12,7 @@ export const modeIcons: Record<Mode, string> = {
 };
 
 export type Mode = 'Heating' | 'Cooling' | 'Dry';
+export type Airflow = "Open" | "Closed";
 
 export type DeviceDetail = {
     id: string;
@@ -20,6 +21,18 @@ export type DeviceDetail = {
     display: boolean;
     setTemperature: number;
     currentTemperature: number;
-    airflow: "Open" | "Closed";
+    airflow: Airflow;
     isEditing: boolean;
-  };
+};
+
+export function modeToNumber(mode: Mode) {
+    switch (mode) {
+        case 'Cooling':
+            return 0;
+        case 'Heating':
+            return 1;
+        case 'Dry':
+        default:
+            return 0;
+    }
+}

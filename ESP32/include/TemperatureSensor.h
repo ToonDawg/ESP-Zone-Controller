@@ -1,16 +1,12 @@
 #ifndef TEMPERATURE_SENSOR_H
 #define TEMPERATURE_SENSOR_H
 
-#include <Adafruit_MCP9808.h>
-
 class TemperatureSensor {
 public:
-  TemperatureSensor();
-  void begin();
-  float readTemperature();
+    virtual void begin() = 0;
+    virtual float readTemperature() = 0;
 
-private:
-  Adafruit_MCP9808 tempSensor;
+    virtual ~TemperatureSensor() = default; 
 };
 
-#endif
+#endif // TEMPERATURE_SENSOR_H

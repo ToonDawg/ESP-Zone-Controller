@@ -14,6 +14,6 @@ extern const tImage coolIcon;
 extern const tImage windFlow;
 extern const tImage noWindFlow;
 extern const tImage celciusIcon;
-
+extern const tImage wifiIcon;
 
 #endif // ICONS_H

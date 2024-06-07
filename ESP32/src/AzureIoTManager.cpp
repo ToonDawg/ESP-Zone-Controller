@@ -7,21 +7,12 @@ char *extractRid(const char *input, char *buffer, size_t bufferLen);
 
 void connectToWiFi()
 {
-    Logger.Info("Connecting to WIFI SSID " + String(IOT_CONFIG_WIFI_SSID));
-
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
-    WiFi.begin(IOT_CONFIG_WIFI_SSID, IOT_CONFIG_WIFI_PASSWORD);
-    while (WiFi.status() != WL_CONNECTED)
+    if (WiFi.status() == WL_CONNECTED)
     {
-        delay(500);
-        Serial.print(".");
+        Logger.Info("WiFi connected, IP address: " + WiFi.localIP().toString());
+    } else {
+        Serial.println("WiFi not Connected. TODO: Reattempt WiFi Connection.");
     }
-
-    Serial.println("");
-
-    Logger.Info("WiFi connected, IP address: " + WiFi.localIP().toString());
 }
 
 void initializeTime()
@@ -179,14 +170,6 @@ esp_err_t AzureIoTManager::mqtt_event_handler(esp_mqtt_event_handle_t event)
         break;
     case MQTT_EVENT_DISCONNECTED:
         Logger.Info("MQTT event MQTT_EVENT_DISCONNECTED");
-        if (sasToken.Generate(SAS_TOKEN_DURATION_IN_MINUTES) != 0)
-        {
-            Logger.Error("Failed generating SAS token");
-            return 1;
-        } else {
-            Logger.Info("Generated new SAS token. Expires at: " + String(sasToken.GetExpirationUnixTime()));
-            mqtt_config.password = (const char *)az_span_ptr(sasToken.Get());
-        }
         break;
     case MQTT_EVENT_SUBSCRIBED:
         Logger.Info("MQTT event MQTT_EVENT_SUBSCRIBED");
@@ -257,7 +240,7 @@ int AzureIoTManager::initializeMqttClient()
         Logger.Error("Failed generating SAS token");
         return 1;
     }
-    
+
     mqtt_config.uri = mqtt_broker_uri;
     mqtt_config.port = mqtt_port;
     mqtt_config.client_id = mqtt_client_id;
@@ -317,17 +300,16 @@ void AzureIoTManager::handleMethod(const esp_mqtt_event_handle_t event)
     {
         handleGetDataMethod(methodId, event->data, event->data_len);
     }
-    else if (strcmp(method_name, "UpdateDataMethod") == 0){
+    else if (strcmp(method_name, "UpdateDataMethod") == 0)
+    {
         Logger.Info("Method Found: " + String(method_name));
         handleUpdateDataMethod(methodId, event->data, event->data_len);
-
     }
     else
     {
         Logger.Info("No matching Direct Method Found for method name: " + String(method_name));
     }
 }
-
 
 void AzureIoTManager::handleGetDataMethod(char *method_id, char *payload, unsigned int length)
 {
@@ -350,7 +332,7 @@ void AzureIoTManager::handleGetDataMethod(char *method_id, char *payload, unsign
 
     String telemetryPayload = generateTelemetryPayload(tempController.getTelemetryData());
     Logger.Info("Generated Telemetry Payload: " + telemetryPayload);
-    
+
     sendResponse(method_id, telemetryPayload);
 }
 
@@ -375,36 +357,41 @@ void AzureIoTManager::sendResponse(char *method_id, String &telemetryPayload)
     }
 }
 
-void AzureIoTManager::handleUpdateDataMethod(char *method_id, char *payload, unsigned int length){
+void AzureIoTManager::handleUpdateDataMethod(char *method_id, char *payload, unsigned int length)
+{
     StaticJsonDocument<256> doc;
     DeserializationError error = deserializeJson(doc, payload, length);
 
-    if (error) {
+    if (error)
+    {
         Serial.println("Failed to parse JSON");
         return;
     }
 
-    if (doc.containsKey("setTemperature")) {
+    if (doc.containsKey("setTemperature"))
+    {
         float setTemp = doc["setTemperature"].as<float>();
         tempController.setSetTemperature(setTemp);
     }
 
-    if (doc.containsKey("currentMode")) {
+    if (doc.containsKey("currentMode"))
+    {
         Mode mode = static_cast<Mode>(doc["currentMode"].as<int>());
         tempController.setMode(mode);
+        Logger.Info(tempController.getMode());
     }
 
-    if (doc.containsKey("currentMotorState")) {
+    if (doc.containsKey("currentMotorState"))
+    {
         MotorState motorState = static_cast<MotorState>(doc["currentMotorState"].as<int>());
         tempController.setMotorState(motorState);
+        Logger.Info(tempController.getMotorState());
     }
 
     String telemetryPayload = generateTelemetryPayload(tempController.getTelemetryData());
 
     sendResponse(method_id, telemetryPayload);
-
 }
-
 
 void AzureIoTManager::sendTelemetry(const TelemetryData &data)
 {

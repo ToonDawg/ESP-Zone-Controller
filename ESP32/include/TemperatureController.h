@@ -4,42 +4,48 @@
 #include "TemperatureSensor.h"
 #include "Icons.h"
 
-enum class Mode {
+enum class Mode
+{
     Heat,
     Cool,
 };
 
-enum class MotorState {
+enum class MotorState
+{
     Open,
     Closed,
 };
 
-struct TelemetryData {
+struct TelemetryData
+{
     float setTemperature;
     float currentTemperature;
     Mode currentMode;
     MotorState currentMotorState;
 };
 
-class TemperatureController {
+class TemperatureController
+{
 private:
     float setTemperature;
     float currentTemperature;
     Mode currentMode = Mode::Cool;
     MotorState currentMotorState = MotorState::Open;
-    TemperatureSensor& temperatureSensor;
+    TemperatureSensor &temperatureSensor;
     unsigned long lastTempCheckTime;
     static constexpr unsigned long TEMPERATURE_INTERVAL = 2000;
     static constexpr float TEMPERATURE_THRESHOLD = 0.5;
+    int relayPin;
 
     bool shouldToggleForHeat(float currentTemp) const;
     bool shouldToggleForCool(float currentTemp) const;
+    void updateRelayState();
 
 public:
-    TemperatureController(float initialTemp, TemperatureSensor& sensor);
+    TemperatureController(float initialTemp, TemperatureSensor& sensor, int relayPin);
     void toggleMode();
-    const char* getMode();
-    const char* getMotorState() const;
+    const char *getMode();
+    const char *getMotorState() const;
     void toggleMotorState();
     void adjustTemperature(float amount);
     void setSetTemperature(float amount);
@@ -48,8 +54,8 @@ public:
     float getSetTemperature() const;
     float getCurrentTemperature();
     void regulateTemperature();
-    const tImage& getModeIcon() const;
-    const tImage& getMotorStateIcon() const;
+    const tImage &getModeIcon() const;
+    const tImage &getMotorStateIcon() const;
     TelemetryData getTelemetryData();
 };
 

@@ -2,8 +2,11 @@
 #include <Arduino.h>
 #include "Icons.h"
 
-TemperatureController::TemperatureController(float initialTemp, TemperatureSensor &sensor)
-    : setTemperature(initialTemp), temperatureSensor(sensor), currentTemperature(0.0f), lastTempCheckTime(0) {}
+
+TemperatureController::TemperatureController(float initialTemp, TemperatureSensor& sensor, int relayPin)
+    : setTemperature(initialTemp), temperatureSensor(sensor), relayPin(relayPin), lastTempCheckTime(0) {
+    pinMode(relayPin, OUTPUT); 
+}
 
 void TemperatureController::adjustTemperature(float amount)
 {
@@ -43,7 +46,7 @@ void TemperatureController::toggleMode()
 
 void TemperatureController::toggleMotorState()
 {
-    currentMotorState = (currentMotorState == MotorState::Open) ? MotorState::Closed : MotorState::Open;
+    currentMotorState == MotorState::Open ? setMotorState(MotorState::Closed) : setMotorState(MotorState::Open);
 }
 
 const char *TemperatureController::getMode()
@@ -77,30 +80,24 @@ TelemetryData TemperatureController::getTelemetryData()
 }
 
 
-void TemperatureController::regulateTemperature()
-{
-    float currentTemp = getCurrentTemperature();
-    bool shouldToggle = false;
-
-    switch (currentMode)
-    {
-    case Mode::Heat:
-        shouldToggle = shouldToggleForHeat(currentTemp);
-        break;
-    case Mode::Cool:
-        shouldToggle = shouldToggleForCool(currentTemp);
-        break;
-    }
-
-    if (shouldToggle)
-    {
-        toggleMotorState();
+void TemperatureController::regulateTemperature() {
+    unsigned long currentTime = millis();
+    if (currentTime - lastTempCheckTime >= TEMPERATURE_INTERVAL) {
+        lastTempCheckTime = currentTime;
+        currentTemperature = temperatureSensor.readTemperature();
+        
+        if (currentMode == Mode::Heat && shouldToggleForHeat(currentTemperature)) {
+            toggleMotorState();
+        } else if (currentMode == Mode::Cool && shouldToggleForCool(currentTemperature)) {
+            toggleMotorState();
+        }
     }
 }
 
 void TemperatureController::setMotorState(MotorState motorState)
 {
     currentMotorState = motorState;
+    updateRelayState();
 }
 
 bool TemperatureController::shouldToggleForHeat(float currentTemp) const
@@ -129,4 +126,10 @@ bool TemperatureController::shouldToggleForCool(float currentTemp) const
     return false;
 }
 
-
+void TemperatureController::updateRelayState() {
+    if (currentMotorState == MotorState::Open) {
+        digitalWrite(relayPin, LOW);
+    } else {
+        digitalWrite(relayPin, HIGH); 
+    }
+}

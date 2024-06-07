@@ -41,9 +41,9 @@ void AppStateManager::displayCurrentTemperature()
     displayManager.displayTemperature(temperatureController.getCurrentTemperature());
     displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
     displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
-    if (btManager.isConnected())
+    if (WiFi.isConnected())
     {
-        displayManager.displayIconBottomMiddle(bluetoothIcon);
+        displayManager.displayIconBottomMiddle(wifiIcon);
     }
 }
 

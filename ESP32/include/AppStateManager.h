@@ -1,5 +1,4 @@
-#ifndef APP_STATE_MANAGER_H
-#define APP_STATE_MANAGER_H
+#pragma once
 
 #include "DisplayManager.h"
 #include "TemperatureController.h"
@@ -8,19 +7,26 @@
 class AppStateManager {
 public:
     enum class AppState {
-      CURRENT_TEMPERATURE,
-      SET_TEMPERATURE,
-      OFF,
-      CONNECTING
+        CURRENT_TEMPERATURE,
+        SET_TEMPERATURE,
+        OFF,
+        CONNECTING
     };
+
+    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, BluetoothManager& btManager);
+    
+    void setAppState(AppState state);
+    AppState getAppState() const;
+    void display();
+    void tick();
+    void recordAdjustmentTime();
 
 private:
     AppState currentState;
     DisplayManager& displayManager;
     TemperatureController& temperatureController;
-    BluetoothManager& btManager; 
+    BluetoothManager& btManager;
 
-    bool advertisingStarted;
     unsigned long lastAdjustmentTime;
 
     void displayCurrentTemperature();
@@ -29,14 +35,4 @@ private:
     void displayConnecting();
     void manageBluetoothStatus();
     void handleStateTimeouts();
-
-public:
-    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, BluetoothManager& btMgr);
-    void setAppState(AppState state);
-    const AppState& getAppState() const;
-    void display();
-    void tick();
-    void recordAdjustmentTime();
 };
-
-#endif // APP_STATE_MANAGER_H

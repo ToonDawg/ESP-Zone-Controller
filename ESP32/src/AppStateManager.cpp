@@ -1,17 +1,19 @@
 #include "AppStateManager.h"
-#include "icons.c"
-#include <WiFi.h>
-#include <BluetoothSerial.h>
+#include <Arduino.h>
 
-AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, BluetoothManager &btMgr)
-    : displayManager(displayManager), temperatureController(tempController), btManager(btMgr), advertisingStarted(false), lastAdjustmentTime(0) {}
+AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, BluetoothManager &btManager)
+    : displayManager(displayManager), temperatureController(tempController), btManager(btManager),
+      currentState(AppState::CURRENT_TEMPERATURE), lastAdjustmentTime(0)
+{
+}
 
 void AppStateManager::setAppState(AppState state)
 {
     currentState = state;
+    lastAdjustmentTime = millis();
 }
 
-const AppStateManager::AppState &AppStateManager::getAppState() const
+AppStateManager::AppState AppStateManager::getAppState() const
 {
     return currentState;
 }
@@ -33,29 +35,36 @@ void AppStateManager::display()
         displayConnecting();
         break;
     }
-    displayManager.render();
+}
+
+void AppStateManager::tick()
+{
+    manageBluetoothStatus();
+    handleStateTimeouts();
+}
+
+void AppStateManager::recordAdjustmentTime()
+{
+    lastAdjustmentTime = millis();
 }
 
 void AppStateManager::displayCurrentTemperature()
 {
-    displayManager.displayTemperature(temperatureController.getCurrentTemperature());
+    displayManager.displayTemperature(temperatureController.getStatus().currentTemperature);
     displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
     displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
-    if (WiFi.isConnected())
-    {
-        displayManager.displayIconBottomMiddle(wifiIcon);
-    }
 }
 
 void AppStateManager::displaySetTemperature()
 {
-    displayManager.displayTemperature(temperatureController.getSetTemperature());
+    displayManager.displayTemperature(temperatureController.getStatus().setTemperature);
     displayManager.displayBottomCentre("Set Temp");
 }
 
 void AppStateManager::displayOff()
 {
     displayManager.displayOff();
+    displayManager.render();
 }
 
 void AppStateManager::displayConnecting()
@@ -76,40 +85,28 @@ void AppStateManager::displayConnecting()
     displayManager.displayCentre(lines, 2);
 }
 
-void AppStateManager::recordAdjustmentTime() {
-    lastAdjustmentTime = millis();
-}
-
-void AppStateManager::manageBluetoothStatus() {
-    if (getAppState() == AppState::CONNECTING) {
-        if (!btManager.isConnected() && !advertisingStarted) {
-            btManager.startAdvertising();
-            advertisingStarted = true;
-        } else if (btManager.isConnected()) {
-            btManager.stopAdvertising();
-            advertisingStarted = false;
+void AppStateManager::manageBluetoothStatus()
+{
+    if (getAppState() == AppState::CONNECTING)
+    {
+        if (btManager.isConnected())
+        {
             setAppState(AppState::CURRENT_TEMPERATURE);
         }
-    } else {
-        advertisingStarted = false;
     }
 }
 
-void AppStateManager::tick()
+void AppStateManager::handleStateTimeouts()
 {
-    manageBluetoothStatus();
-    handleStateTimeouts();
-}
-
-void AppStateManager::handleStateTimeouts() {
     unsigned long currentTime = millis();
 
-    if (currentState == AppState::SET_TEMPERATURE && currentTime - lastAdjustmentTime > 3000) {
+    if (currentState == AppState::SET_TEMPERATURE && currentTime - lastAdjustmentTime > 3000)
+    {
         setAppState(AppState::CURRENT_TEMPERATURE);
     }
 
-    if (getAppState() == AppState::CONNECTING && currentTime - lastAdjustmentTime > 60000) {
-        btManager.stopAdvertising();
+    if (getAppState() == AppState::CONNECTING && currentTime - lastAdjustmentTime > 60000)
+    {
         setAppState(AppState::CURRENT_TEMPERATURE);
     }
 }

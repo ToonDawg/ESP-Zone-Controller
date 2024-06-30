@@ -2,134 +2,94 @@
 #include <Arduino.h>
 #include "Icons.h"
 
-
-TemperatureController::TemperatureController(float initialTemp, TemperatureSensor& sensor, int relayPin)
-    : setTemperature(initialTemp), temperatureSensor(sensor), relayPin(relayPin), lastTempCheckTime(0) {
-    pinMode(relayPin, OUTPUT); 
-}
-
-void TemperatureController::adjustTemperature(float amount)
+TemperatureController::TemperatureController(float initialTemp, TemperatureSensor &sensor, int relayPin)
+    : temperatureSensor(sensor), relayPin(relayPin), lastUpdateTime(0)
 {
-    setTemperature += amount;
+    currentStatus = {
+        initialTemp,
+        0.0f,
+        Mode::Cool,
+        MotorState::Open};
+    pinMode(relayPin, OUTPUT);
+    updateRelayState();
 }
 
-float TemperatureController::getSetTemperature() const
-{
-    return setTemperature;
-}
-
-void TemperatureController::setSetTemperature(float amount)
-{
-    setTemperature = amount;
-}
-
-float TemperatureController::getCurrentTemperature()
+void TemperatureController::update()
 {
     unsigned long currentTime = millis();
-    if (currentTime - lastTempCheckTime >= TEMPERATURE_INTERVAL)
+    if (currentTime - lastUpdateTime >= UPDATE_INTERVAL)
     {
-        lastTempCheckTime = currentTime;
-        currentTemperature = temperatureSensor.readTemperature();
+        lastUpdateTime = currentTime;
+        updateTemperature();
+        regulateTemperature();
     }
-    return currentTemperature;
 }
 
-void TemperatureController::setMode(Mode mode)
+TemperatureController::Status TemperatureController::getStatus() const
 {
-    currentMode = mode;
+    return currentStatus;
+}
+
+void TemperatureController::setTemperature(float temperature)
+{
+    currentStatus.setTemperature = temperature;
+}
+
+void TemperatureController::adjustTemperature(float delta)
+{
+    currentStatus.setTemperature += delta;
 }
 
 void TemperatureController::toggleMode()
 {
-    currentMode = (currentMode == Mode::Heat) ? Mode::Cool : Mode::Heat;
+    currentStatus.mode = (currentStatus.mode == Mode::Heat) ? Mode::Cool : Mode::Heat;
 }
 
 void TemperatureController::toggleMotorState()
 {
-    currentMotorState == MotorState::Open ? setMotorState(MotorState::Closed) : setMotorState(MotorState::Open);
-}
-
-const char *TemperatureController::getMode()
-{
-    return (currentMode == Mode::Heat) ? "Heat" : "Cool";
-}
-
-const char *TemperatureController::getMotorState() const
-{
-    return (currentMotorState == MotorState::Open) ? "Open" : "Closed";
-}
-
-const tImage& TemperatureController::getModeIcon() const
-{
-    return (currentMode == Mode::Heat) ? heatIcon : coolIcon;
-}
-
-const tImage& TemperatureController::getMotorStateIcon() const
-{
-    return (currentMotorState == MotorState::Open) ? windFlow : noWindFlow;
-}
-
-TelemetryData TemperatureController::getTelemetryData()
-{
-    TelemetryData data;
-    data.setTemperature = setTemperature;
-    data.currentTemperature = currentTemperature;
-    data.currentMode = currentMode;
-    data.currentMotorState = currentMotorState;
-    return data;
-}
-
-
-void TemperatureController::regulateTemperature() {
-    unsigned long currentTime = millis();
-    if (currentTime - lastTempCheckTime >= TEMPERATURE_INTERVAL) {
-        lastTempCheckTime = currentTime;
-        currentTemperature = temperatureSensor.readTemperature();
-        
-        if (currentMode == Mode::Heat && shouldToggleForHeat(currentTemperature)) {
-            toggleMotorState();
-        } else if (currentMode == Mode::Cool && shouldToggleForCool(currentTemperature)) {
-            toggleMotorState();
-        }
-    }
-}
-
-void TemperatureController::setMotorState(MotorState motorState)
-{
-    currentMotorState = motorState;
+    currentStatus.motorState = (currentStatus.motorState == MotorState::Open) ? MotorState::Closed : MotorState::Open;
     updateRelayState();
 }
 
-bool TemperatureController::shouldToggleForHeat(float currentTemp) const
+const tImage &TemperatureController::getModeIcon() const
 {
-    if (currentTemp < (setTemperature - TEMPERATURE_THRESHOLD) && currentMotorState == MotorState::Closed)
-    {
-        return true;
-    }
-    if (currentTemp > (setTemperature + TEMPERATURE_THRESHOLD) && currentMotorState == MotorState::Open)
-    {
-        return true;
-    }
-    return false;
+    return (currentStatus.mode == Mode::Heat) ? heatIcon : coolIcon;
 }
 
-bool TemperatureController::shouldToggleForCool(float currentTemp) const
+const tImage &TemperatureController::getMotorStateIcon() const
 {
-    if (currentTemp > (setTemperature + TEMPERATURE_THRESHOLD) && currentMotorState == MotorState::Closed)
-    {
-        return true;
-    }
-    if (currentTemp < (setTemperature - TEMPERATURE_THRESHOLD) && currentMotorState == MotorState::Open)
-    {
-        return true;
-    }
-    return false;
+    return (currentStatus.motorState == MotorState::Open) ? windFlow : noWindFlow;
 }
 
-void TemperatureController::updateRelayState() {
-    if (currentMotorState == MotorState::Open) {
-        digitalWrite(relayPin, LOW);
-    } else {
-        digitalWrite(relayPin, HIGH); 
+void TemperatureController::updateTemperature()
+{
+    currentStatus.currentTemperature = temperatureSensor.readTemperature();
+}
+
+void TemperatureController::regulateTemperature()
+{
+    if (shouldActivateMotor())
+    {
+        toggleMotorState();
+    }
+}
+
+void TemperatureController::updateRelayState()
+{
+    digitalWrite(relayPin, currentStatus.motorState == MotorState::Open ? LOW : HIGH);
+}
+
+bool TemperatureController::shouldActivateMotor() const
+{
+    float diff = currentStatus.currentTemperature - currentStatus.setTemperature;
+    if (currentStatus.mode == Mode::Heat)
+    {
+        return (diff < -TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Open) ||
+               (diff > TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Closed);
+    }
+    else // Mode::Cool
+    {
+        return (diff > TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Open) ||
+               (diff < -TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Closed);
     }
 }

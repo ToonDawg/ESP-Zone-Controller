@@ -3,70 +3,80 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include "DisplayManager.h"
-#include "DS18B20Sensor.h"
-#include "TemperatureSensor.h"
+#include "TMP112Sensor.h"
+#include "MCP9808Sensor.h"
 #include "TemperatureController.h"
 #include "ButtonManager.h"
-#include "LargeFont.h"
-#include "SmallFont.h"
 #include "AppStateManager.h"
 #include "BluetoothManager.h"
-#include <TMP112Sensor.h>
-#include <AzureIoTManager.h>
+
+// #include "AzureIoTManager.h"
 
 constexpr int SCREEN_WIDTH = 128;
 constexpr int SCREEN_HEIGHT = 64;
-#define Display_i2c_Address 0x3c
-#define TMP112_I2C_ADDRESS 0x48
-#define Display_SDA_PIN 5
-#define Display_SCL_PIN 6
-#define OLED_RESET -1
-#define ONE_WIRE_BUS_PIN 0
-#define RELAY_PIN 10
+constexpr uint8_t DISPLAY_I2C_ADDRESS = 0x3C;
+constexpr uint8_t TMP112_I2C_ADDRESS = 0x48;
+constexpr uint8_t MCP9808_I2C_ADDRESS = 0x18;
+constexpr uint8_t I2C_SDA_PIN = 5;
+constexpr uint8_t I2C_SCL_PIN = 6;
+constexpr int8_t OLED_RESET = -1;
+constexpr uint8_t RELAY_PIN = 10;
+constexpr unsigned long TEMPERATURE_UPDATE_INTERVAL = 5000;
+float mcp9808Temp = 0;
 
-TMP112Sensor temperatureSensor(TMP112_I2C_ADDRESS);
-// DS18B20Sensor temperatureSensor(ONE_WIRE_BUS_PIN);
-TemperatureController tempController(20.0, temperatureSensor, RELAY_PIN);
-Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+TwoWire i2cBus(0);
+TMP112Sensor tmp112Sensor(TMP112_I2C_ADDRESS, &i2cBus);
+MCP9808Sensor mcp9808Sensor(MCP9808_I2C_ADDRESS, &i2cBus);
+TemperatureController tempController(24.0, tmp112Sensor, RELAY_PIN);
+Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &i2cBus, OLED_RESET);
 DisplayManager displayManager(display);
 BluetoothManager btManager(tempController);
 AppStateManager appStateManager(displayManager, tempController, btManager);
-AzureIoTManager azureIoTManager(tempController);
+// AzureIoTManager azureIoTManager(tempController);
 ButtonManager buttonManager(tempController, appStateManager);
 
-void setup() {
+unsigned long lastUpdateTime = 0;
+
+void setup()
+{
   Serial.begin(115200);
-  Serial.println("Serial communication started");
+  i2cBus.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+  i2cBus.setClock(100000);
 
-  Wire.setPins(Display_SDA_PIN, Display_SCL_PIN);
-  Wire.begin();
-  display.begin(Display_i2c_Address, true);
-  Serial.println(F("Setup"));
-
-
-  if(!display.begin()) {
+  if (!display.begin(DISPLAY_I2C_ADDRESS, true))
+  {
     Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
   }
 
-  btManager.init();
-  btManager.setupCharacteristic();
+  tmp112Sensor.begin();
+  mcp9808Sensor.begin();
+  tmp112Sensor.setTemperatureOffset(-5.0);
+  buttonManager.setupButtons();
 
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SH110X_WHITE);
-  display.drawPixel(10, 10, SH110X_WHITE);
+  display.setCursor(0, 0);
   display.display();
-
-  temperatureSensor.begin();
-  buttonManager.setupButtons();
 }
 
-void loop() {
+void loop()
+{
   buttonManager.tick();
-  appStateManager.tick(); 
-  tempController.regulateTemperature();
+  appStateManager.tick();
+  tempController.update();
 
+  unsigned long currentTime = millis();
+  if (currentTime - lastUpdateTime >= TEMPERATURE_UPDATE_INTERVAL)
+  {
+    lastUpdateTime = currentTime;
+    mcp9808Temp = mcp9808Sensor.readTemperature();
+    Serial.printf("MCP9808: %.2f°C\n", mcp9808Temp);
+  }
   display.clearDisplay();
   appStateManager.display();
+  displayManager.displayBottomCentre(String(mcp9808Temp, 2));
+  displayManager.render();
+
+  delay(10);
 }

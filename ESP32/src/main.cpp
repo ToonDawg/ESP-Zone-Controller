@@ -4,7 +4,6 @@
 #include <Adafruit_SH110X.h>
 #include "DisplayManager.h"
 #include "TMP112Sensor.h"
-#include "MCP9808Sensor.h"
 #include "TemperatureController.h"
 #include "ButtonManager.h"
 #include "AppStateManager.h"
@@ -16,17 +15,14 @@ constexpr int SCREEN_WIDTH = 128;
 constexpr int SCREEN_HEIGHT = 64;
 constexpr uint8_t DISPLAY_I2C_ADDRESS = 0x3C;
 constexpr uint8_t TMP112_I2C_ADDRESS = 0x48;
-constexpr uint8_t MCP9808_I2C_ADDRESS = 0x18;
 constexpr uint8_t I2C_SDA_PIN = 5;
 constexpr uint8_t I2C_SCL_PIN = 6;
 constexpr int8_t OLED_RESET = -1;
 constexpr uint8_t RELAY_PIN = 10;
 constexpr unsigned long TEMPERATURE_UPDATE_INTERVAL = 5000;
-float mcp9808Temp = 0;
 
 TwoWire i2cBus(0);
 TMP112Sensor tmp112Sensor(TMP112_I2C_ADDRESS, &i2cBus);
-MCP9808Sensor mcp9808Sensor(MCP9808_I2C_ADDRESS, &i2cBus);
 TemperatureController tempController(24.0, tmp112Sensor, RELAY_PIN);
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &i2cBus, OLED_RESET);
 DisplayManager displayManager(display);
@@ -49,7 +45,6 @@ void setup()
   }
 
   tmp112Sensor.begin();
-  mcp9808Sensor.begin();
   tmp112Sensor.setTemperatureOffset(-5.0);
   buttonManager.setupButtons();
 
@@ -66,17 +61,8 @@ void loop()
   appStateManager.tick();
   tempController.update();
 
-  unsigned long currentTime = millis();
-  if (currentTime - lastUpdateTime >= TEMPERATURE_UPDATE_INTERVAL)
-  {
-    lastUpdateTime = currentTime;
-    mcp9808Temp = mcp9808Sensor.readTemperature();
-    Serial.printf("MCP9808: %.2f°C\n", mcp9808Temp);
-  }
   display.clearDisplay();
   appStateManager.display();
-  displayManager.displayBottomCentre(String(mcp9808Temp, 2));
-  displayManager.render();
 
   delay(10);
 }

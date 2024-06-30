@@ -76,7 +76,7 @@ void TemperatureController::regulateTemperature()
 
 void TemperatureController::updateRelayState()
 {
-    digitalWrite(relayPin, currentStatus.motorState == MotorState::Open ? LOW : HIGH);
+    digitalWrite(relayPin, currentStatus.motorState == MotorState::Open ? HIGH : LOW);
 }
 
 bool TemperatureController::shouldActivateMotor() const
@@ -87,7 +87,7 @@ bool TemperatureController::shouldActivateMotor() const
         return (diff < -TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Open) ||
                (diff > TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Closed);
     }
-    else // Mode::Cool
+    else
     {
         return (diff > TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Open) ||
                (diff < -TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Closed);

@@ -35,6 +35,7 @@ void AppStateManager::display()
         displayConnecting();
         break;
     }
+    displayManager.render();
 }
 
 void AppStateManager::tick()

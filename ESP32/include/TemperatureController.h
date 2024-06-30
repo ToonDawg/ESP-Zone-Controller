@@ -1,62 +1,44 @@
-#ifndef TEMPERATURE_CONTROLLER_H
-#define TEMPERATURE_CONTROLLER_H
+#pragma once
 
 #include "TemperatureSensor.h"
 #include "Icons.h"
 
-enum class Mode
-{
-    Heat,
-    Cool,
-};
-
-enum class MotorState
-{
-    Open,
-    Closed,
-};
-
-struct TelemetryData
-{
-    float setTemperature;
-    float currentTemperature;
-    Mode currentMode;
-    MotorState currentMotorState;
-};
-
-class TemperatureController
-{
-private:
-    float setTemperature;
-    float currentTemperature;
-    Mode currentMode = Mode::Cool;
-    MotorState currentMotorState = MotorState::Open;
-    TemperatureSensor &temperatureSensor;
-    unsigned long lastTempCheckTime;
-    static constexpr unsigned long TEMPERATURE_INTERVAL = 2000;
-    static constexpr float TEMPERATURE_THRESHOLD = 0.5;
-    int relayPin;
-
-    bool shouldToggleForHeat(float currentTemp) const;
-    bool shouldToggleForCool(float currentTemp) const;
-    void updateRelayState();
-
+class TemperatureController {
 public:
-    TemperatureController(float initialTemp, TemperatureSensor& sensor, int relayPin);
-    void toggleMode();
-    const char *getMode();
-    const char *getMotorState() const;
-    void toggleMotorState();
-    void adjustTemperature(float amount);
-    void setSetTemperature(float amount);
-    void setMode(Mode mode);
-    void setMotorState(MotorState motorState);
-    float getSetTemperature() const;
-    float getCurrentTemperature();
-    void regulateTemperature();
-    const tImage &getModeIcon() const;
-    const tImage &getMotorStateIcon() const;
-    TelemetryData getTelemetryData();
-};
+    enum class Mode { Heat, Cool };
+    enum class MotorState { Open, Closed };
 
-#endif // TEMPERATURE_CONTROLLER_H
+    struct Status {
+        float setTemperature;
+        float currentTemperature;
+        Mode mode;
+        MotorState motorState;
+    };
+
+    TemperatureController(float initialTemp, TemperatureSensor& sensor, int relayPin);
+
+    void update();
+    Status getStatus() const;
+
+    void setTemperature(float temperature);
+    void adjustTemperature(float delta);
+    void toggleMode();
+    void toggleMotorState();
+
+    const tImage& getModeIcon() const;
+    const tImage& getMotorStateIcon() const;
+
+private:
+    static constexpr float TEMPERATURE_THRESHOLD = 0.5f;
+    static constexpr unsigned long UPDATE_INTERVAL = 2000; // ms
+
+    TemperatureSensor& temperatureSensor;
+    int relayPin;
+    Status currentStatus;
+    unsigned long lastUpdateTime;
+
+    void updateTemperature();
+    void regulateTemperature();
+    void updateRelayState();
+    bool shouldActivateMotor() const;
+};

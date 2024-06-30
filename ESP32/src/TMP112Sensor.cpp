@@ -2,7 +2,6 @@
 #include <HardwareSerial.h>
 
 constexpr float INVALID_TEMPERATURE = -273.15f;
-constexpr int NUM_SAMPLES = 5;  // Number of samples for averaging
 
 TMP112Sensor::TMP112Sensor(uint8_t address, TwoWire *wire) 
     : i2cAddress(address), wire(wire), temperatureOffset(0.0f) {}
@@ -21,27 +20,6 @@ void TMP112Sensor::begin() {
 }
 
 float TMP112Sensor::readTemperature() {
-    float sum = 0;
-    int validReadings = 0;
-
-    for (int i = 0; i < NUM_SAMPLES; i++) {
-        float temp = readSingleTemperature();
-        if (temp != INVALID_TEMPERATURE) {
-            sum += temp;
-            validReadings++;
-        }
-        delay(100);  // Short delay between readings
-    }
-
-    if (validReadings > 0) {
-        float averageTemp = sum / validReadings;
-        return averageTemp + temperatureOffset;
-    } else {
-        return INVALID_TEMPERATURE;
-    }
-}
-
-float TMP112Sensor::readSingleTemperature() {
     wire->beginTransmission(i2cAddress);
     wire->write(0x00);  // Temperature register
     if (wire->endTransmission() != 0) {
@@ -62,7 +40,7 @@ float TMP112Sensor::readSingleTemperature() {
     
     float temperature = rawTemperature * 0.0625f;
     
-    return temperature;
+    return temperature + temperatureOffset;
 }
 
 void TMP112Sensor::setTemperatureOffset(float offset) {

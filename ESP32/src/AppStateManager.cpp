@@ -1,9 +1,14 @@
 #include "AppStateManager.h"
 #include <Arduino.h>
+#include "AppStateManager.h"
 
-AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, BluetoothManager &btManager)
-    : displayManager(displayManager), temperatureController(tempController), btManager(btManager),
-      currentState(AppState::CURRENT_TEMPERATURE), lastAdjustmentTime(0)
+#include "AppStateManager.h"
+
+AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController)
+    : displayManager(displayManager), temperatureController(tempController),
+      currentState(AppState::CURRENT_TEMPERATURE), lastAdjustmentTime(0),
+      settingsMenu("Settings", {"Temp. Unit", "Motor Direction", "WiFi", "Temp. Calibration"}),
+      motorDirectionMenu("Motor Direction", {"Normal", "Reversed"})
 {
 }
 
@@ -31,8 +36,14 @@ void AppStateManager::display()
     case AppState::OFF:
         displayOff();
         break;
-    case AppState::CONNECTING:
-        displayConnecting();
+    case AppState::SETTINGS:
+        displaySettings();
+        break;
+    case AppState::WIFI_PROVISIONING:
+        displayWiFiProvisioning();
+        break;
+    case AppState::MOTOR_DIRECTION:
+        displayMotorDirectionSetting();
         break;
     }
     displayManager.render();
@@ -49,6 +60,57 @@ void AppStateManager::recordAdjustmentTime()
     lastAdjustmentTime = millis();
 }
 
+void AppStateManager::menuNavigateUp()
+{
+    if (currentState == AppState::SETTINGS)
+    {
+        settingsMenu.navigateUp();
+    }
+    else if (currentState == AppState::MOTOR_DIRECTION)
+    {
+        motorDirectionMenu.navigateUp();
+    }
+    display();
+}
+
+void AppStateManager::menuNavigateDown()
+{
+    if (currentState == AppState::SETTINGS)
+    {
+        settingsMenu.navigateDown();
+    }
+    else if (currentState == AppState::MOTOR_DIRECTION)
+    {
+        motorDirectionMenu.navigateDown();
+    }
+    display();
+}
+
+void AppStateManager::selectMenuItem()
+{
+    if (currentState == AppState::SETTINGS)
+    {
+        switch (settingsMenu.getSelectedIndex())
+        {
+        case 0: /* Handle Temp Unit */
+            break;
+        case 1:
+            setAppState(AppState::MOTOR_DIRECTION);
+            break;
+        case 2:
+            setAppState(AppState::WIFI_PROVISIONING);
+            break;
+        case 3: /* Handle Temp Calibration */
+            break;
+        }
+    }
+    else if (currentState == AppState::MOTOR_DIRECTION)
+    {
+        // Handle motor direction selection
+        setAppState(AppState::SETTINGS);
+    }
+}
+
 void AppStateManager::displayCurrentTemperature()
 {
     displayManager.displayTemperature(temperatureController.getStatus().currentTemperature);
@@ -59,42 +121,42 @@ void AppStateManager::displayCurrentTemperature()
 void AppStateManager::displaySetTemperature()
 {
     displayManager.displayTemperature(temperatureController.getStatus().setTemperature);
-    displayManager.displayBottomCentre("Set Temp");
+    displayManager.displayBottomCenterText("Set Temp");
 }
 
 void AppStateManager::displayOff()
 {
     displayManager.displayOff();
-    displayManager.render();
 }
 
-void AppStateManager::displayConnecting()
+void AppStateManager::displaySettings()
 {
-    String lines[2];
+    displayManager.displaySettingsMenu(
+        settingsMenu.getTitle(),
+        settingsMenu.getItems(),
+        settingsMenu.getItems().size(),
+        settingsMenu.getSelectedIndex());
+}
 
-    if (btManager.isConnected())
-    {
-        lines[0] = "Connected to";
-        lines[1] = "Bluetooth!";
-    }
-    else
-    {
-        lines[0] = "Connecting to";
-        lines[1] = "Bluetooth...";
-    }
+void AppStateManager::displayMotorDirectionSetting()
+{
+    displayManager.displaySettingsMenu(
+        motorDirectionMenu.getTitle(),
+        motorDirectionMenu.getItems(),
+        motorDirectionMenu.getItems().size(),
+        motorDirectionMenu.getSelectedIndex());
+}
 
+void AppStateManager::displayWiFiProvisioning()
+{
+    // Implement WiFi provisioning display
+    String lines[2] = {"WiFi", "Setup"};
     displayManager.displayCentre(lines, 2);
 }
 
 void AppStateManager::manageBluetoothStatus()
 {
-    if (getAppState() == AppState::CONNECTING)
-    {
-        if (btManager.isConnected())
-        {
-            setAppState(AppState::CURRENT_TEMPERATURE);
-        }
-    }
+    // Implement Bluetooth status management
 }
 
 void AppStateManager::handleStateTimeouts()
@@ -102,11 +164,6 @@ void AppStateManager::handleStateTimeouts()
     unsigned long currentTime = millis();
 
     if (currentState == AppState::SET_TEMPERATURE && currentTime - lastAdjustmentTime > 3000)
-    {
-        setAppState(AppState::CURRENT_TEMPERATURE);
-    }
-
-    if (getAppState() == AppState::CONNECTING && currentTime - lastAdjustmentTime > 60000)
     {
         setAppState(AppState::CURRENT_TEMPERATURE);
     }

@@ -1,8 +1,8 @@
+// AppStateManager.h
 #pragma once
-
 #include "DisplayManager.h"
 #include "TemperatureController.h"
-#include "BluetoothManager.h"
+#include "Menu.h"
 
 class AppStateManager {
 public:
@@ -10,29 +10,37 @@ public:
         CURRENT_TEMPERATURE,
         SET_TEMPERATURE,
         OFF,
-        CONNECTING
+        SETTINGS,
+        WIFI_PROVISIONING,
+        MOTOR_DIRECTION
     };
 
-    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, BluetoothManager& btManager);
+    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController);
     
     void setAppState(AppState state);
     AppState getAppState() const;
     void display();
     void tick();
     void recordAdjustmentTime();
+    void menuNavigateUp();
+    void menuNavigateDown();
+    void selectMenuItem();
 
 private:
     AppState currentState;
     DisplayManager& displayManager;
     TemperatureController& temperatureController;
-    BluetoothManager& btManager;
-
     unsigned long lastAdjustmentTime;
+    
+    Menu settingsMenu;
+    Menu motorDirectionMenu;
 
     void displayCurrentTemperature();
     void displaySetTemperature();
     void displayOff();
-    void displayConnecting();
+    void displaySettings();
+    void displayWiFiProvisioning();
+    void displayMotorDirectionSetting();
     void manageBluetoothStatus();
     void handleStateTimeouts();
 };

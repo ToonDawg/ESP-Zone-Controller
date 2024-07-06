@@ -1,142 +1,206 @@
 #include "DisplayManager.h"
-#include "Icons.h"
 #include <Fonts/FreeSansBold24pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
+#include <vector>
 
-constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;
-constexpr int16_t FONT_VERTICAL_PADDING = 6;
-constexpr int16_t DISPLAY_SIDE_MARGIN = 4;
+const GFXfont DisplayManager::smallFont = FreeSans9pt7b;
+const GFXfont DisplayManager::largeFont = FreeSansBold24pt7b;
 
-const GFXfont smallFont = FreeSans9pt7b;
-const GFXfont largeFont = FreeSansBold24pt7b;
+DisplayManager::DisplayManager(Adafruit_SH1106G &display) : display(display) {}
 
-int16_t DisplayManager::calculateTextCenterX(const String& text, const GFXfont* font) {
-  int16_t x, y;
-  uint16_t w, h;
-  display.setFont(font);
-  display.getTextBounds(text.c_str(), 0, 0, &x, &y, &w, &h);
-  return (display.width() - w) / 2;
+const GFXfont *DisplayManager::getFontForSize(FontSize size) const
+{
+    return (size == FontSize::LARGE) ? &largeFont : &smallFont;
 }
 
-int16_t DisplayManager::calculateTextWidth(const String& text, const GFXfont* font) {
-  int16_t x, y;
-  uint16_t w, h;
-  display.setFont(font);
-  display.getTextBounds(text.c_str(), 0, 0, &x, &y, &w, &h);
-  return w;
+void DisplayManager::drawText(const String &text, int16_t x, int16_t y, const TextStyle &style)
+{
+    const GFXfont *font = getFontForSize(style.fontSize);
+    display.setFont(font);
+    display.setTextColor(style.color);
+
+    if (style.alignment == TextAlignment::CENTER)
+    {
+        x = (display.width() - calculateTextWidth(text, font)) / 2;
+    }
+    else if (style.alignment == TextAlignment::RIGHT)
+    {
+        x = display.width() - calculateTextWidth(text, font) - DISPLAY_SIDE_MARGIN;
+    }
+
+    display.setCursor(x, y);
+    display.print(text);
 }
 
-int16_t DisplayManager::calculateTextHeight(const String& text, const GFXfont* font) {
-  int16_t x, y;
-  uint16_t w, h;
-  display.setFont(font);
-  display.getTextBounds(text.c_str(), 0, 0, &x, &y, &w, &h);
-  return h;
+int16_t DisplayManager::calculateTextWidth(const String &text, const GFXfont *font)
+{
+    int16_t x, y;
+    uint16_t w, h;
+    display.setFont(font);
+    display.getTextBounds(text.c_str(), 0, 0, &x, &y, &w, &h);
+    return w;
 }
 
-void DisplayManager::draw8BitImage(int16_t x, int16_t y, const tImage& image) {
-    for (int16_t j = 0; j < image.height; j++) {
-        for (int16_t i = 0; i < image.width; i++) {
-            if (image.data[j * image.width + i] == 0xff) {
+int16_t DisplayManager::calculateTextHeight(const String &text, const GFXfont *font)
+{
+    int16_t x, y;
+    uint16_t w, h;
+    display.setFont(font);
+    display.getTextBounds(text.c_str(), 0, 0, &x, &y, &w, &h);
+    return h;
+}
+
+void DisplayManager::draw8BitImage(int16_t x, int16_t y, const tImage &image)
+{
+    for (int16_t j = 0; j < image.height; j++)
+    {
+        for (int16_t i = 0; i < image.width; i++)
+        {
+            if (image.data[j * image.width + i] == 0xff)
+            {
                 display.drawPixel(x + i, y + j, MONOOLED_WHITE);
-            } else {
+            }
+            else
+            {
                 display.drawPixel(x + i, y + j, MONOOLED_BLACK);
             }
         }
     }
 }
 
-void DisplayManager::displayTemperature(float temperature) {
-  String temperatureString = String(temperature, 1);
+void DisplayManager::displayTemperature(float temperature)
+{
+    display.clearDisplay();
 
-  int16_t temperatureStartX = calculateTextCenterX(temperatureString, &largeFont);
-  display.setFont(&largeFont);
-  display.setCursor(temperatureStartX, TEMPERATURE_FONT_HEIGHT);
-  display.print(temperatureString);
+    String temperatureString = String(temperature, 1);
+    TextStyle tempStyle(FontSize::LARGE, MONOOLED_WHITE, TextAlignment::CENTER);
+    drawText(temperatureString, 0, TEMPERATURE_FONT_HEIGHT, tempStyle);
 
-  int16_t unitStartX = temperatureStartX + calculateTextWidth(temperatureString, &largeFont) + 3; 
-  draw8BitImage(unitStartX, 3, celciusIcon);
+    int16_t unitStartX = display.width() - celciusIcon.width - DISPLAY_SIDE_MARGIN;
+    draw8BitImage(unitStartX, DISPLAY_SIDE_MARGIN, celciusIcon);
 
-  display.drawFastHLine(30, TEMPERATURE_FONT_HEIGHT + FONT_VERTICAL_PADDING, display.width() - 60, MONOOLED_WHITE);
+    display.drawFastHLine(30, TEMPERATURE_FONT_HEIGHT + FONT_VERTICAL_PADDING, display.width() - 60, MONOOLED_WHITE);
 }
 
-
-void DisplayManager::displayBottomLeft(const String& message) {
-  int16_t textBoxX, textBoxY; 
-  uint16_t textBoxWidth, textBoxHeight;
-
-  display.setFont(&smallFont);
-  display.getTextBounds(message, 0, 0, &textBoxX, &textBoxY, &textBoxWidth, &textBoxHeight);
-
-  display.setCursor(5, display.height() - DISPLAY_SIDE_MARGIN);
-  display.print(message);
+void DisplayManager::displayIconBottomLeft(const tImage &icon)
+{
+    draw8BitImage(DISPLAY_SIDE_MARGIN,
+                  display.height() - icon.height - DISPLAY_SIDE_MARGIN,
+                  icon);
 }
 
-void DisplayManager::displayIconBottomLeft(const tImage& icon) {
-    int16_t iconX = 5;  
-    int16_t iconY = display.height() - icon.height;
-
-    draw8BitImage(iconX, iconY, icon);
+void DisplayManager::displayIconBottomRight(const tImage &icon)
+{
+    draw8BitImage(display.width() - icon.width - DISPLAY_SIDE_MARGIN,
+                  display.height() - icon.height - DISPLAY_SIDE_MARGIN,
+                  icon);
 }
 
-void DisplayManager::displayIconBottomRight(const tImage& icon) {
-    int16_t iconX = display.width() - icon.width;  
-    int16_t iconY = display.height() - icon.height;
-
-    draw8BitImage(iconX, iconY, icon);
+void DisplayManager::displayBottomCenterText(const String &text)
+{
+    TextStyle style(FontSize::SMALL, MONOOLED_WHITE, TextAlignment::CENTER);
+    drawText(text, 0, display.height() - DISPLAY_SIDE_MARGIN, style);
 }
 
-void DisplayManager::displayIconBottomMiddle(const tImage& icon) {
-    int16_t iconX = (display.width() - icon.width) / 2;  // Center the icon horizontally
-    int16_t iconY = display.height() - icon.height;       // Position the icon at the bottom
-
-    draw8BitImage(iconX, iconY, icon);
+void DisplayManager::displayOff()
+{
+    display.clearDisplay();
 }
 
-void DisplayManager::displayBottomRight(const String& message) {
-  int16_t textBoxX, textBoxY;
-  uint16_t textBoxWidth, textBoxHeight;
-
-  display.setFont(&smallFont);
-  display.getTextBounds(message, 0, 0, &textBoxX, &textBoxY, &textBoxWidth, &textBoxHeight);
-
-  display.setCursor(display.width() - textBoxWidth - 5, display.height() - DISPLAY_SIDE_MARGIN);
-  display.print(message);
+void DisplayManager::render()
+{
+    display.display();
 }
 
-void DisplayManager::displayBottomCentre(const String& message) {
-    int16_t temperatureStartX = calculateTextCenterX(message, &smallFont);
-    display.setFont(&smallFont);
-    display.setCursor(temperatureStartX, display.height() - DISPLAY_SIDE_MARGIN);
-    display.print(message);
+void DisplayManager::displayCentre(const String lines[], int numLines, const TextStyle &style)
+{
+    display.clearDisplay();
+    int16_t textHeight = calculateTextHeight("W", getFontForSize(style.fontSize));
+    int16_t totalHeight = textHeight * numLines;
+    int16_t startY = (display.height() - totalHeight) / 2 + textHeight;
+
+    for (int i = 0; i < numLines; i++)
+    {
+        drawText(lines[i], 0, startY + i * (textHeight + 5), style);
+    }
 }
 
-void DisplayManager::displayOff() {
-  display.clearDisplay();
+void DisplayManager::displaySettingsMenu(const String &title, const std::vector<String> &items, int numItems, int selectedIndex)
+{
+    display.clearDisplay();
+
+    int16_t titleHeight = displayMenuTitle(title);
+
+    const int16_t itemHeight = 16;
+    const int16_t itemSpacing = 2;
+    const int16_t textHeight = 12;
+    const int16_t verticalOffset = (itemHeight - textHeight) / 2;
+    const int maxVisibleItems = 2;
+
+    int startIdx = std::max(0, std::min(selectedIndex - 1, numItems - maxVisibleItems));
+
+    int16_t startY = titleHeight + 4;
+
+    // Display menu items
+    for (int i = 0; i < maxVisibleItems && (startIdx + i) < numItems; i++)
+    {
+        int itemIndex = startIdx + i;
+        int16_t itemY = startY + i * (itemHeight + itemSpacing);
+
+        bool isSelected = (itemIndex == selectedIndex);
+        displayMenuItem(items[itemIndex], isSelected, itemY, verticalOffset, textHeight);
+    }
+
+    // Draw scroll indicators
+    const int16_t indicatorWidth = 6;
+    const int16_t indicatorHeight = 4;
+    const int16_t indicatorMargin = 2;
+
+    // Top indicator (upward-pointing triangle)
+    if (startIdx > 0)
+    {
+        display.fillTriangle(
+            display.width() - indicatorMargin - indicatorWidth, titleHeight + indicatorHeight + indicatorMargin,
+            display.width() - indicatorMargin - (indicatorWidth / 2), titleHeight + indicatorMargin,
+            display.width() - indicatorMargin, titleHeight + indicatorHeight + indicatorMargin,
+            MONOOLED_WHITE);
+    }
+
+    // Bottom indicator (downward-pointing triangle)
+    if (startIdx + maxVisibleItems < numItems)
+    {
+        display.fillTriangle(
+            display.width() - indicatorMargin - indicatorWidth, display.height() - indicatorHeight - indicatorMargin,
+            display.width() - indicatorMargin - (indicatorWidth / 2), display.height() - indicatorMargin,
+            display.width() - indicatorMargin, display.height() - indicatorHeight - indicatorMargin,
+            MONOOLED_WHITE);
+    }
 }
 
-void DisplayManager::render() {
-  display.display();
+int16_t DisplayManager::displayMenuTitle(const String &title)
+{
+    TextStyle titleStyle(FontSize::SMALL, MONOOLED_WHITE, TextAlignment::CENTER);
+    int16_t titleHeight = calculateTextHeight(title, getFontForSize(titleStyle.fontSize));
+    drawText(title, 0, titleHeight + 2, titleStyle);
+
+    int16_t lineY = titleHeight + 4;
+    display.drawFastHLine(30, lineY, display.width() - 60, MONOOLED_WHITE);
+
+    return lineY + 2;
 }
 
-void DisplayManager::displayCentre(const String lines[], int numLines) {
-  int16_t textHeight = calculateTextHeight("W", &smallFont); // Assuming all characters have roughly the same height
+void DisplayManager::displayMenuItem(const String &item, bool selected, int16_t y, int16_t verticalOffset, int16_t textHeight)
+{
+    if (selected)
+    {
+        display.fillRect(0, y, display.width() - 8, textHeight + 2 * verticalOffset, MONOOLED_WHITE);
+        display.setTextColor(MONOOLED_BLACK);
+    }
+    else
+    {
+        display.setTextColor(MONOOLED_WHITE);
+    }
 
-  int16_t totalHeight = textHeight * numLines;
-
-  
-  int16_t startY = (display.height() - totalHeight) / 2 + textHeight; 
-
-  for (int i = 0; i < numLines; i++) {
-    displayChunkCentre(lines[i], startY);
-    startY += textHeight + 5; 
-  }
-}
-
-void DisplayManager::displayChunkCentre(const String& chunk, int16_t startY) {
-  int16_t textWidth = calculateTextWidth(chunk, &smallFont);
-  int16_t textStartX = (display.width() - textWidth) / 2;
-
-  display.setCursor(textStartX, startY);
-  display.print(chunk);
+    display.setCursor(2, y + verticalOffset + textHeight);
+    display.print(item);
 }

@@ -7,9 +7,7 @@
 #include "TemperatureController.h"
 #include "ButtonManager.h"
 #include "AppStateManager.h"
-#include "BluetoothManager.h"
-
-// #include "AzureIoTManager.h"
+#include "WiFiProvisionManager.h"
 
 constexpr int SCREEN_WIDTH = 128;
 constexpr int SCREEN_HEIGHT = 64;
@@ -19,19 +17,15 @@ constexpr uint8_t I2C_SDA_PIN = 5;
 constexpr uint8_t I2C_SCL_PIN = 6;
 constexpr int8_t OLED_RESET = -1;
 constexpr uint8_t RELAY_PIN = 10;
-constexpr unsigned long TEMPERATURE_UPDATE_INTERVAL = 5000;
 
 TwoWire i2cBus(0);
 TMP112Sensor tmp112Sensor(TMP112_I2C_ADDRESS, &i2cBus);
 TemperatureController tempController(24.0, tmp112Sensor, RELAY_PIN);
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &i2cBus, OLED_RESET);
 DisplayManager displayManager(display);
-BluetoothManager btManager(tempController);
-AppStateManager appStateManager(displayManager, tempController, btManager);
-// AzureIoTManager azureIoTManager(tempController);
+WiFiProvisionManager wifiManager;
+AppStateManager appStateManager(displayManager, tempController);
 ButtonManager buttonManager(tempController, appStateManager);
-
-unsigned long lastUpdateTime = 0;
 
 void setup()
 {
@@ -47,6 +41,7 @@ void setup()
   tmp112Sensor.begin();
   tmp112Sensor.setTemperatureOffset(-5.0);
   buttonManager.setupButtons();
+  wifiManager.begin();
 
   display.clearDisplay();
   display.setTextSize(1);
@@ -63,6 +58,4 @@ void loop()
 
   display.clearDisplay();
   appStateManager.display();
-
-  delay(10);
 }

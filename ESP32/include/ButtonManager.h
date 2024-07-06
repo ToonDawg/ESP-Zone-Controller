@@ -1,10 +1,9 @@
-#ifndef BUTTON_MANAGER_H
-#define BUTTON_MANAGER_H
+#pragma once
+
 
 #include <OneButton.h>
 #include "TemperatureController.h"
 #include "AppStateManager.h"
-
 class ButtonManager {
 public:
     ButtonManager(TemperatureController& tempController, AppStateManager& appStateManager);
@@ -14,25 +13,34 @@ public:
 private:
     TemperatureController& tempController;
     AppStateManager& appStateManager;
-    OneButton increaseTemperatureButton;
-    OneButton decreaseTemperatureButton;
-    OneButton toggleModeButton;
-    OneButton toggleDisplayButton;
+    OneButton increaseButton;
+    OneButton decreaseButton;
+    OneButton buttonA;
+    OneButton buttonB;
 
     static ButtonManager* instance;
 
-    static void handleIncreaseTemperatureClick();
-    static void handleDecreaseTemperatureClick();
-    static void handleToggleModeClick();
-    static void handleToggleModeLongPressStart();
-    static void handleToggleDisplayClick();
-    static void handleIncreaseTemperatureDuringLongPress();
-    static void handleDecreaseTemperatureDuringLongPress();
+    static void handleIncreaseClick();
+    static void handleDecreaseClick();
+    static void handleButtonAClick();
+    static void handleButtonBClick();
 
-    static constexpr unsigned int INCREASE_TEMPERATURE_BUTTON_PIN = 4;
-    static constexpr unsigned int DECREASE_TEMPERATURE_BUTTON_PIN = 7;
-    static constexpr unsigned int TOGGLE_MODE_BUTTON_PIN = 3;
-    static constexpr unsigned int TOGGLE_DISPLAY_BUTTON_PIN = 2;
+    static void handleIncreaseLongPressStart();
+    static void handleALongPressStart();
+    static void handleBLongPressStart();
+    static void handleDecreaseLongPressStart();
+    static void handleIncreaseLongPress();
+    static void handleDecreaseLongPress();
+
+    void handleIncreaseInCurrentState();
+    void handleDecreaseInCurrentState();
+    void handleButtonAInCurrentState();
+    void handleButtonBInCurrentState();
+    void handleIncreaseLongPressInCurrentState();
+    void handleDecreaseLongPressInCurrentState();
+
+    static constexpr unsigned int INCREASE_BUTTON_PIN = 4;
+    static constexpr unsigned int DECREASE_BUTTON_PIN = 7;
+    static constexpr unsigned int BUTTON_A_PIN = 3;
+    static constexpr unsigned int BUTTON_B_PIN = 2;
 };
-
-#endif // BUTTON_MANAGER_H

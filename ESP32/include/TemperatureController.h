@@ -2,6 +2,7 @@
 
 #include "TemperatureSensor.h"
 #include "Icons.h"
+#include "Settings.h"
 
 class TemperatureController {
 public:
@@ -15,12 +16,11 @@ public:
         MotorState motorState;
     };
 
-    TemperatureController(float initialTemp, TemperatureSensor& sensor, int relayPin);
+    TemperatureController(TemperatureSensor& sensor, int relayPin, Settings& settings);
 
     void update();
     Status getStatus() const;
 
-    void setTemperature(float temperature);
     void adjustTemperature(float delta);
     void toggleMode();
     void toggleMotorState();
@@ -33,6 +33,7 @@ private:
     static constexpr unsigned long UPDATE_INTERVAL = 2000; // ms
 
     TemperatureSensor& temperatureSensor;
+    Settings& settings;
     int relayPin;
     Status currentStatus;
     unsigned long lastUpdateTime;

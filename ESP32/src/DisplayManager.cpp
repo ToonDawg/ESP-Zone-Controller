@@ -125,11 +125,11 @@ void DisplayManager::displayCentre(const String lines[], int numLines, const Tex
     }
 }
 
-void DisplayManager::displaySettingsMenu(const String &title, const std::vector<String> &items, int numItems, int selectedIndex)
+void DisplayManager::displaySettingsMenu(const Menu &menu)
 {
     display.clearDisplay();
 
-    int16_t titleHeight = displayMenuTitle(title);
+    int16_t titleHeight = displayMenuTitle(menu.getTitle());
 
     const int16_t itemHeight = 16;
     const int16_t itemSpacing = 2;
@@ -137,6 +137,8 @@ void DisplayManager::displaySettingsMenu(const String &title, const std::vector<
     const int16_t verticalOffset = (itemHeight - textHeight) / 2;
     const int maxVisibleItems = 2;
 
+    int selectedIndex = menu.getSelectedIndex();
+    int numItems = menu.getNumItems();
     int startIdx = std::max(0, std::min(selectedIndex - 1, numItems - maxVisibleItems));
 
     int16_t startY = titleHeight + 4;
@@ -148,7 +150,8 @@ void DisplayManager::displaySettingsMenu(const String &title, const std::vector<
         int16_t itemY = startY + i * (itemHeight + itemSpacing);
 
         bool isSelected = (itemIndex == selectedIndex);
-        displayMenuItem(items[itemIndex], isSelected, itemY, verticalOffset, textHeight);
+        bool isActive = (itemIndex == menu.getActiveIndex());
+        displayMenuItem(menu.getItems()[itemIndex], isSelected, isActive, itemY, verticalOffset, textHeight);
     }
 
     // Draw scroll indicators
@@ -189,7 +192,7 @@ int16_t DisplayManager::displayMenuTitle(const String &title)
     return lineY + 2;
 }
 
-void DisplayManager::displayMenuItem(const String &item, bool selected, int16_t y, int16_t verticalOffset, int16_t textHeight)
+void DisplayManager::displayMenuItem(const String &item, bool selected, bool active, int16_t y, int16_t verticalOffset, int16_t textHeight)
 {
     if (selected)
     {
@@ -203,4 +206,9 @@ void DisplayManager::displayMenuItem(const String &item, bool selected, int16_t 
 
     display.setCursor(2, y + verticalOffset + textHeight);
     display.print(item);
+
+    if (active)
+    {
+        display.fillCircle(display.width() - 15, y + (textHeight + 2 * verticalOffset) / 2, 2, selected ? MONOOLED_BLACK : MONOOLED_WHITE);
+    }
 }

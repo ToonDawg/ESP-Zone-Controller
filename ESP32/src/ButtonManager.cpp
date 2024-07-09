@@ -100,16 +100,14 @@ void ButtonManager::handleIncreaseInCurrentState()
     AppStateManager::AppState currentState = appStateManager.getAppState();
     switch (currentState)
     {
-    case AppStateManager::AppState::CURRENT_TEMPERATURE:
-    case AppStateManager::AppState::SET_TEMPERATURE:
-        tempController.adjustTemperature(0.5);
-        appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
-        appStateManager.recordAdjustmentTime();
-        break;
     case AppStateManager::AppState::SETTINGS:
     case AppStateManager::AppState::MOTOR_DIRECTION:
         appStateManager.menuNavigateUp();
         break;
+    default:
+        tempController.adjustTemperature(0.5);
+        appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
+        appStateManager.recordAdjustmentTime();
     }
 }
 
@@ -118,16 +116,14 @@ void ButtonManager::handleDecreaseInCurrentState()
     AppStateManager::AppState currentState = appStateManager.getAppState();
     switch (currentState)
     {
-    case AppStateManager::AppState::CURRENT_TEMPERATURE:
-    case AppStateManager::AppState::SET_TEMPERATURE:
-        tempController.adjustTemperature(-0.5);
-        appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
-        appStateManager.recordAdjustmentTime();
-        break;
     case AppStateManager::AppState::SETTINGS:
     case AppStateManager::AppState::MOTOR_DIRECTION:
         appStateManager.menuNavigateDown();
         break;
+    default:
+        tempController.adjustTemperature(-0.5);
+        appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
+        appStateManager.recordAdjustmentTime();
     }
 }
 
@@ -136,11 +132,13 @@ void ButtonManager::handleButtonAInCurrentState()
     AppStateManager::AppState currentState = appStateManager.getAppState();
     switch (currentState)
     {
-    case AppStateManager::AppState::CURRENT_TEMPERATURE:
-        tempController.toggleMode();
-        break;
     case AppStateManager::AppState::SETTINGS:
+    case AppStateManager::AppState::MOTOR_DIRECTION:
         appStateManager.selectMenuItem();
+        break;
+    default:
+        appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
+        tempController.toggleMode();
         break;
     }
 }
@@ -160,7 +158,7 @@ void ButtonManager::handleButtonBInCurrentState()
 
 void ButtonManager::handleIncreaseLongPressInCurrentState()
 {
-    AppStateManager::AppState currentState = appStateManager.getAppState();
+    AppStateManager::AppState currentState = appStateManager.getAppState(); 
     if (currentState == AppStateManager::AppState::CURRENT_TEMPERATURE ||
         currentState == AppStateManager::AppState::SET_TEMPERATURE)
     {

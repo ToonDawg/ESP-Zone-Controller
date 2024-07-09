@@ -5,15 +5,22 @@
 
 class Menu {
 public:
-    Menu(const String& title, const std::vector<String>& items);
+    Menu(const String& title, const std::vector<String>& items)
+        : title(title), items(items), selectedIndex(0), activeIndex(-1) {}
+
+    const String& getTitle() const { return title; }
+    const std::vector<String>& getItems() const { return items; }
+    int getSelectedIndex() const { return selectedIndex; }
+    void setSelectedIndex(int index) { selectedIndex = index; }
+    int getNumItems() const { return items.size(); }
+    void setActiveIndex(int index) { activeIndex = index; }
+    int getActiveIndex() const { return activeIndex; }
     void navigateUp();
     void navigateDown();
-    int getSelectedIndex() const;
-    const String& getTitle() const;
-    const std::vector<String>& getItems() const;
 
 private:
     String title;
     std::vector<String> items;
     int selectedIndex;
+    int activeIndex;
 };

@@ -2,11 +2,11 @@
 #include <Arduino.h>
 #include "Icons.h"
 
-TemperatureController::TemperatureController(float initialTemp, TemperatureSensor &sensor, int relayPin)
-    : temperatureSensor(sensor), relayPin(relayPin), lastUpdateTime(0)
+TemperatureController::TemperatureController(TemperatureSensor &sensor, int relayPin, Settings &settings)
+    : temperatureSensor(sensor), relayPin(relayPin), settings(settings), lastUpdateTime(0)
 {
     currentStatus = {
-        initialTemp,
+        settings.getSetTemperature(),
         0.0f,
         Mode::Cool,
         MotorState::Open};
@@ -30,14 +30,10 @@ TemperatureController::Status TemperatureController::getStatus() const
     return currentStatus;
 }
 
-void TemperatureController::setTemperature(float temperature)
-{
-    currentStatus.setTemperature = temperature;
-}
-
 void TemperatureController::adjustTemperature(float delta)
 {
     currentStatus.setTemperature += delta;
+    settings.setSetTemperature(currentStatus.setTemperature);
 }
 
 void TemperatureController::toggleMode()
@@ -82,14 +78,12 @@ void TemperatureController::updateRelayState()
 bool TemperatureController::shouldActivateMotor() const
 {
     float diff = currentStatus.currentTemperature - currentStatus.setTemperature;
-    if (currentStatus.mode == Mode::Heat)
-    {
-        return (diff < -TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Open) ||
-               (diff > TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Closed);
-    }
-    else
-    {
-        return (diff > TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Open) ||
-               (diff < -TEMPERATURE_THRESHOLD && currentStatus.motorState == MotorState::Closed);
-    }
+    bool isHeating = currentStatus.mode == Mode::Heat;
+    bool motorOpen = currentStatus.motorState ==
+                     (settings.getMotorDirection() ? MotorState::Open : MotorState::Closed);
+
+    bool shouldOpen = isHeating ? (diff < -TEMPERATURE_THRESHOLD)
+                                : (diff > TEMPERATURE_THRESHOLD);
+
+    return shouldOpen != motorOpen;
 }

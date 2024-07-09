@@ -1,12 +1,14 @@
 #include "AppStateManager.h"
 #include <Arduino.h>
 #include "AppStateManager.h"
+#include "Settings.h"
 
-#include "AppStateManager.h"
-
-AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController)
-    : displayManager(displayManager), temperatureController(tempController),
-      currentState(AppState::CURRENT_TEMPERATURE), lastAdjustmentTime(0),
+AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings)
+    : displayManager(displayManager),
+      temperatureController(tempController),
+      settings(settings),
+      currentState(AppState::CURRENT_TEMPERATURE),
+      lastAdjustmentTime(0),
       settingsMenu("Settings", {"Temp. Unit", "Motor Direction", "WiFi", "Temp. Calibration"}),
       motorDirectionMenu("Motor Direction", {"Normal", "Reversed"})
 {
@@ -92,7 +94,7 @@ void AppStateManager::selectMenuItem()
     {
         switch (settingsMenu.getSelectedIndex())
         {
-        case 0: /* Handle Temp Unit */
+        case 0:
             break;
         case 1:
             setAppState(AppState::MOTOR_DIRECTION);
@@ -106,8 +108,21 @@ void AppStateManager::selectMenuItem()
     }
     else if (currentState == AppState::MOTOR_DIRECTION)
     {
-        // Handle motor direction selection
-        setAppState(AppState::SETTINGS);
+        switch (motorDirectionMenu.getSelectedIndex())
+        {
+        case 0:
+            settings.setMotorDirection(true);
+            setAppState(AppState::CURRENT_TEMPERATURE);
+            break;
+        case 1:
+            settings.setMotorDirection(false);
+            setAppState(AppState::CURRENT_TEMPERATURE);
+
+            break;
+        default:
+            setAppState(AppState::CURRENT_TEMPERATURE);
+            break;
+        }
     }
 }
 
@@ -131,20 +146,14 @@ void AppStateManager::displayOff()
 
 void AppStateManager::displaySettings()
 {
-    displayManager.displaySettingsMenu(
-        settingsMenu.getTitle(),
-        settingsMenu.getItems(),
-        settingsMenu.getItems().size(),
-        settingsMenu.getSelectedIndex());
+    displayManager.displaySettingsMenu(settingsMenu);
 }
 
 void AppStateManager::displayMotorDirectionSetting()
 {
-    displayManager.displaySettingsMenu(
-        motorDirectionMenu.getTitle(),
-        motorDirectionMenu.getItems(),
-        motorDirectionMenu.getItems().size(),
-        motorDirectionMenu.getSelectedIndex());
+    bool currentDirection = settings.getMotorDirection();
+    motorDirectionMenu.setActiveIndex(currentDirection ? 0 : 1);
+    displayManager.displaySettingsMenu(motorDirectionMenu);
 }
 
 void AppStateManager::displayWiFiProvisioning()
@@ -167,4 +176,22 @@ void AppStateManager::handleStateTimeouts()
     {
         setAppState(AppState::CURRENT_TEMPERATURE);
     }
+}
+
+void AppStateManager::saveSettings()
+{
+    // settings.setTemperatureUnit(/* get current temperature unit */);
+    // settings.setTemperatureCalibration(/* get current temperature calibration */);
+}
+
+void AppStateManager::loadSettings()
+{
+    bool isCelsius = settings.getTemperatureUnit();
+    bool isNormalMotorDirection = settings.getMotorDirection();
+    float tempCalibration = settings.getTemperatureCalibration();
+}
+
+void AppStateManager::beginSettings()
+{
+    settings.begin();
 }

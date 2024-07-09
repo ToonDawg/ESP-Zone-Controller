@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include "Icons.h"
 #include <vector>
+#include "Menu.h"
 
 
 class DisplayManager {
@@ -36,7 +37,7 @@ public:
     void displayOff();
     void render();
     void displayCentre(const String lines[], int numLines, const TextStyle& style = TextStyle());
-    void displaySettingsMenu(const String& title, const std::vector<String>& items, int numItems, int selectedIndex);
+    void displaySettingsMenu(const Menu &menu);
 
     // Utility functions
     uint16_t getWidth() const { return display.width(); }
@@ -55,7 +56,7 @@ protected:
     
     // Menu helper functions
     int16_t displayMenuTitle(const String& title);
-    void displayMenuItem(const String &item, bool selected, int16_t y, int16_t verticalOffset, int16_t textHeight);
+    void displayMenuItem(const String &item, bool selected, bool active, int16_t y, int16_t verticalOffset, int16_t textHeight);
 
     // Font helper function
     const GFXfont* getFontForSize(FontSize size) const;

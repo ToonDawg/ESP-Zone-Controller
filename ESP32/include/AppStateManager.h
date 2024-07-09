@@ -3,6 +3,7 @@
 #include "DisplayManager.h"
 #include "TemperatureController.h"
 #include "Menu.h"
+#include "Settings.h"
 
 class AppStateManager {
 public:
@@ -15,7 +16,7 @@ public:
         MOTOR_DIRECTION
     };
 
-    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController);
+    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, Settings& settings);
     
     void setAppState(AppState state);
     AppState getAppState() const;
@@ -25,11 +26,15 @@ public:
     void menuNavigateUp();
     void menuNavigateDown();
     void selectMenuItem();
+    void beginSettings();
+    void saveSettings();
+    void loadSettings();
 
 private:
     AppState currentState;
     DisplayManager& displayManager;
     TemperatureController& temperatureController;
+    Settings& settings;
     unsigned long lastAdjustmentTime;
     
     Menu settingsMenu;

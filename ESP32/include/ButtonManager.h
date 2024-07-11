@@ -4,15 +4,18 @@
 #include <OneButton.h>
 #include "TemperatureController.h"
 #include "AppStateManager.h"
+#include "OTAUpdater.h"
+
 class ButtonManager {
 public:
-    ButtonManager(TemperatureController& tempController, AppStateManager& appStateManager);
+    ButtonManager(TemperatureController& tempController, AppStateManager& appStateManager, OTAUpdater& updater);
     void setupButtons();
     void tick();
 
 private:
     TemperatureController& tempController;
     AppStateManager& appStateManager;
+    OTAUpdater& updater;
     OneButton increaseButton;
     OneButton decreaseButton;
     OneButton buttonA;

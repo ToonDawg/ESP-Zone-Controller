@@ -2,8 +2,8 @@
 
 ButtonManager *ButtonManager::instance = nullptr;
 
-ButtonManager::ButtonManager(TemperatureController &tempController, AppStateManager &appStateManager)
-    : tempController(tempController), appStateManager(appStateManager),
+ButtonManager::ButtonManager(TemperatureController &tempController, AppStateManager &appStateManager, OTAUpdater &updater)
+    : tempController(tempController), appStateManager(appStateManager), updater(updater),
       increaseButton(INCREASE_BUTTON_PIN, true),
       decreaseButton(DECREASE_BUTTON_PIN, true),
       buttonA(BUTTON_A_PIN, true),
@@ -147,8 +147,17 @@ void ButtonManager::handleButtonAInCurrentState()
         break;
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
         appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
-
         break;
+    case AppStateManager::AppState::OTA_UPDATE:
+        if (updater.checkForUpdates())
+        {
+            Serial.println("Update available. Starting update process...");
+            updater.performUpdate();
+        }
+        else
+        {
+            Serial.println("No update available.");
+        }
 
     default:
         appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);

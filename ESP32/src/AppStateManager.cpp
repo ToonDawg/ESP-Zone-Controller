@@ -42,7 +42,7 @@ void AppStateManager::display()
     case AppState::SETTINGS:
         displaySettings();
         break;
-    case AppState::WIFI_PROVISIONING:
+    case AppState::OTA_UPDATE:
         displayWiFiProvisioning();
         break;
     case AppState::MOTOR_DIRECTION:
@@ -120,7 +120,7 @@ void AppStateManager::selectMenuItem()
             setAppState(AppState::TEMPERATURE_UNIT);
             break;
         case 3:
-            setAppState(AppState::WIFI_PROVISIONING);
+            setAppState(AppState::OTA_UPDATE);
             break;
         }
         break;
@@ -160,7 +160,6 @@ void AppStateManager::selectMenuItem()
         break;
 
     default:
-        // Handle any other states if necessary
         break;
     }
 }
@@ -211,8 +210,8 @@ void AppStateManager::displayTemperatureUnitSetting()
 void AppStateManager::displayWiFiProvisioning()
 {
     // Implement WiFi provisioning display
-    String lines[2] = {"WiFi", "Setup"};
-    displayManager.displayCentre(lines, 2);
+    String lines[2] = {"OTA Update", "Press A to Update"};
+    displayManager.displayCentre(lines, 1);
 }
 
 void AppStateManager::manageBluetoothStatus()

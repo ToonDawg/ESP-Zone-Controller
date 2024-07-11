@@ -15,7 +15,8 @@ public:
         WIFI_PROVISIONING,
         MOTOR_DIRECTION,
         TEMPERATURE_CALIBRATION,
-        TEMPERATURE_UNIT
+        TEMPERATURE_UNIT,
+        OTA_UPDATE
     };
 
     enum class TemperatureUnit {

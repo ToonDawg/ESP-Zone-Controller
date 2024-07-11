@@ -11,6 +11,7 @@
 #include "Settings.h"
 #include <WiFi.h>
 #include <ArduinoOTA.h>
+#include "OTAUpdater.h"
 
 constexpr int SCREEN_WIDTH = 128;
 constexpr int SCREEN_HEIGHT = 64;
@@ -23,7 +24,10 @@ constexpr uint8_t RELAY_PIN = 10;
 
 const char *ssid = "Asus";
 const char *password = "REDACTED";
+const char* firmware_url = "https://test-esp32-firmware-updates.s3.amazonaws.com/AC%20Mate/v0.0.0/firmware.bin";
+const char* metadata_url = "https://test-esp32-firmware-updates.s3.amazonaws.com/AC%20Mate/v0.0.0/metadata.json";
 
+OTAUpdater updater(firmware_url, metadata_url);
 TwoWire i2cBus(0);
 Settings settings;
 TMP112Sensor *tmp112Sensor = nullptr;
@@ -54,7 +58,7 @@ void setup()
   displayManager = new DisplayManager(display);
   wifiManager = new WiFiProvisionManager();
   appStateManager = new AppStateManager(*displayManager, *tempController, settings);
-  buttonManager = new ButtonManager(*tempController, *appStateManager);
+  buttonManager = new ButtonManager(*tempController, *appStateManager, updater);
 
   buttonManager->setupButtons();
   wifiManager->begin();

@@ -9,6 +9,8 @@
 #include "AppStateManager.h"
 #include "WiFiProvisionManager.h"
 #include "Settings.h"
+#include <WiFi.h>
+#include <ArduinoOTA.h>
 
 constexpr int SCREEN_WIDTH = 128;
 constexpr int SCREEN_HEIGHT = 64;
@@ -19,44 +21,50 @@ constexpr uint8_t I2C_SCL_PIN = 6;
 constexpr int8_t OLED_RESET = -1;
 constexpr uint8_t RELAY_PIN = 10;
 
+const char *ssid = "Asus";
+const char *password = "REDACTED";
+
 TwoWire i2cBus(0);
 Settings settings;
-TMP112Sensor tmp112Sensor(TMP112_I2C_ADDRESS, &i2cBus);
-TemperatureController tempController(tmp112Sensor, RELAY_PIN, settings);
+TMP112Sensor *tmp112Sensor = nullptr;
+TemperatureController *tempController = nullptr;
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &i2cBus, OLED_RESET);
-DisplayManager displayManager(display);
-WiFiProvisionManager wifiManager;
-AppStateManager appStateManager(displayManager, tempController, settings);
-ButtonManager buttonManager(tempController, appStateManager);
+DisplayManager *displayManager = nullptr;
+WiFiProvisionManager *wifiManager = nullptr;
+AppStateManager *appStateManager = nullptr;
+ButtonManager *buttonManager = nullptr;
 
 void setup()
 {
   Serial.begin(115200);
   i2cBus.begin(I2C_SDA_PIN, I2C_SCL_PIN);
   i2cBus.setClock(100000);
-  while (!Serial)
-  {
-    ;
-  }
 
   if (!display.begin(DISPLAY_I2C_ADDRESS, true))
   {
     Serial.println(F("SSD1306 allocation failed"));
   }
-  settings.begin();
 
-  tmp112Sensor.begin();
-  tmp112Sensor.setTemperatureOffset(-5.0);
-  buttonManager.setupButtons();
-  wifiManager.begin();
+  settings.begin();
+  tmp112Sensor = new TMP112Sensor(TMP112_I2C_ADDRESS, &i2cBus);
+  tmp112Sensor->begin();
+  tmp112Sensor->setTemperatureOffset(settings.getTemperatureCalibration());
+
+  tempController = new TemperatureController(*tmp112Sensor, RELAY_PIN, settings);
+  displayManager = new DisplayManager(display);
+  wifiManager = new WiFiProvisionManager();
+  appStateManager = new AppStateManager(*displayManager, *tempController, settings);
+  buttonManager = new ButtonManager(*tempController, *appStateManager);
+
+  buttonManager->setupButtons();
+  wifiManager->begin();
 
   Serial.println("Serial communication initialized.");
 
   float setTemp = settings.getSetTemperature();
-
   Serial.print("Set Temperature: ");
   Serial.print(setTemp);
-  Serial.println(" °C"); // Assuming the temperature is in Celsius
+  Serial.println(" °C");
 
   display.clearDisplay();
   display.setTextSize(1);
@@ -67,10 +75,20 @@ void setup()
 
 void loop()
 {
-  buttonManager.tick();
-  appStateManager.tick();
-  tempController.update();
+  buttonManager->tick();
+  appStateManager->tick();
+  tempController->update();
 
   display.clearDisplay();
-  appStateManager.display();
+  appStateManager->display();
+}
+
+void cleanup()
+{
+  delete tmp112Sensor;
+  delete tempController;
+  delete displayManager;
+  delete wifiManager;
+  delete appStateManager;
+  delete buttonManager;
 }

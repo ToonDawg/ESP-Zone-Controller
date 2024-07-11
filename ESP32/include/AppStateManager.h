@@ -13,7 +13,14 @@ public:
         OFF,
         SETTINGS,
         WIFI_PROVISIONING,
-        MOTOR_DIRECTION
+        MOTOR_DIRECTION,
+        TEMPERATURE_CALIBRATION,
+        TEMPERATURE_UNIT
+    };
+
+    enum class TemperatureUnit {
+        CELSIUS,
+        FAHRENHEIT
     };
 
     AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, Settings& settings);
@@ -39,13 +46,16 @@ private:
     
     Menu settingsMenu;
     Menu motorDirectionMenu;
+    Menu tempUnitMenu;
 
     void displayCurrentTemperature();
     void displaySetTemperature();
+    void displayTemperatureCalibration();
     void displayOff();
     void displaySettings();
     void displayWiFiProvisioning();
     void displayMotorDirectionSetting();
+    void displayTemperatureUnitSetting();
     void manageBluetoothStatus();
     void handleStateTimeouts();
 };

@@ -36,6 +36,13 @@ void TemperatureController::adjustTemperature(float delta)
     settings.setSetTemperature(currentStatus.setTemperature);
 }
 
+void TemperatureController::adjustCalibrationTemperature(float delta)
+{
+    float temperatureOffset = settings.getTemperatureCalibration() + delta;
+    settings.setTemperatureCalibration(temperatureOffset);
+    temperatureSensor.setTemperatureOffset(temperatureOffset);
+}
+
 void TemperatureController::toggleMode()
 {
     currentStatus.mode = (currentStatus.mode == Mode::Heat) ? Mode::Cool : Mode::Heat;

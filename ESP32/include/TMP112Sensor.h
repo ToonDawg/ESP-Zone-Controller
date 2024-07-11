@@ -31,7 +31,7 @@ public:
      * 
      * @param offset The offset in Celsius to be applied to the temperature readings
      */
-    void setTemperatureOffset(float offset);
+    void setTemperatureOffset(float offset) override;
 
     /**
      * @brief Get the current temperature offset

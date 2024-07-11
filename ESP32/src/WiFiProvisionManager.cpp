@@ -2,7 +2,7 @@
 #include <esp_wifi.h>
 
 static const char PROGMEM service_name[] = "TempControl_PROV";
-static const char PROGMEM pop[] = "abcd1234"; // Proof of possession - change this to a secure value
+static const char PROGMEM pop[] = "abcd1234";
 
 WiFiProvisionManager* WiFiProvisionManager::instance = nullptr;
 

@@ -21,7 +21,7 @@ void Settings::setSetTemperature(float setTemp) {
 }
 
 float Settings::getSetTemperature() {
-    return preferences.getFloat("set_temp", 10.0);
+    return preferences.getFloat("set_temp", 24.0);
 }
 
 void Settings::setMotorDirection(bool isNormal) {

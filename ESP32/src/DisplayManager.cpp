@@ -192,20 +192,80 @@ int16_t DisplayManager::displayMenuTitle(const String &title)
     return lineY + 2;
 }
 
+int16_t DisplayManager::getStringWidth(const String &str)
+{
+    int16_t x1, y1;
+    uint16_t w, h;
+    display.getTextBounds(str, 0, 0, &x1, &y1, &w, &h);
+    return w;
+}
+
+String DisplayManager::cutoffText(const String &text, int16_t maxWidth) {
+        if (getStringWidth(text) <= maxWidth) {
+            return text;
+        }
+
+        String cutoff = "";
+        for (char c : text) {
+            if (getStringWidth(cutoff + c) > maxWidth) {
+                break;
+            }
+            cutoff += c;
+        }
+
+        return cutoff;
+    }
+
 void DisplayManager::displayMenuItem(const String &item, bool selected, bool active, int16_t y, int16_t verticalOffset, int16_t textHeight)
 {
+    int16_t maxWidth = display.width() - 10;
+
     if (selected)
     {
         display.fillRect(0, y, display.width() - 8, textHeight + 2 * verticalOffset, MONOOLED_WHITE);
         display.setTextColor(MONOOLED_BLACK);
+
+        // Check if item needs scrolling
+        int16_t itemWidth = getStringWidth(item);
+        if (itemWidth > maxWidth)
+        {
+            // Item needs scrolling
+            if (item != currentScrollingItem)
+            {
+                // Reset scroll if it's a new item
+                scrollOffset = 0;
+                scrollStartTime = millis();
+                currentScrollingItem = item;
+            }
+
+            unsigned long currentTime = millis();
+            if (currentTime - scrollStartTime > SCROLL_DELAY)
+            {
+                // Start scrolling
+                int16_t scrollAmount = (currentTime - scrollStartTime - SCROLL_DELAY) / SCROLL_SPEED;
+                scrollOffset = scrollAmount % (itemWidth + maxWidth);
+            }
+
+            // Create a scrolling window
+            display.setCursor(2 - scrollOffset, y + verticalOffset + textHeight);
+            display.print(item + "    " + item); // Repeat the item to create continuous scroll
+        }
+        else
+        {
+            // No need to scroll
+            display.setCursor(2, y + verticalOffset + textHeight);
+            display.print(item);
+        }
     }
     else
     {
         display.setTextColor(MONOOLED_WHITE);
-    }
+        display.setCursor(2, y + verticalOffset + textHeight);
 
-    display.setCursor(2, y + verticalOffset + textHeight);
-    display.print(item);
+        // Cut off text if it's too long
+        String displayText = cutoffText(item, maxWidth);
+        display.print(displayText);
+    }
 
     if (active)
     {

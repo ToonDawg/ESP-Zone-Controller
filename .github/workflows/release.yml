@@ -6,7 +6,7 @@ on:
 
 env:
   S3_BUCKET: test-esp32-firmware-updates
-  DEVICE_NAME: AC Mate
+  DEVICE_NAME: ACMate
   PROJECT_DIR: ESP32
 
 

@@ -1,0 +1,89 @@
+name: OTA Firmware Update
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  S3_BUCKET: test-esp32-firmware-updates
+  DEVICE_NAME: AC Mate
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Fetch all history for all tags and branches
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install PlatformIO
+      run: |
+        pip install platformio
+
+    - name: Determine version
+      id: get_version
+      run: |
+        # Get the latest tag
+        latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $latest_tag"
+        
+        # Extract components
+        IFS='.' read -r major minor patch <<< "${latest_tag#v}"
+        
+        # Increment patch version
+        new_patch=$((patch + 1))
+        new_version="v$major.$minor.$new_patch"
+        
+        echo "New version: $new_version"
+        echo "FIRMWARE_VERSION=$new_version" >> $GITHUB_ENV
+        echo "::set-output name=version::$new_version"
+
+    - name: Build firmware
+      run: |
+        pio run -e production
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-southeast-2
+
+    - name: Deploy to S3
+      run: |
+        # Create new version folder
+        aws s3 mb s3://${S3_BUCKET}/${DEVICE_NAME}/${FIRMWARE_VERSION} || true
+
+        # Upload firmware
+        aws s3 cp .pio/build/production/firmware.bin s3://${S3_BUCKET}/${DEVICE_NAME}/${FIRMWARE_VERSION}/firmware.bin
+
+        # Create and upload metadata file
+        echo "{\"version\":\"${FIRMWARE_VERSION}\",\"date\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > metadata.json
+        aws s3 cp metadata.json s3://${S3_BUCKET}/${DEVICE_NAME}/${FIRMWARE_VERSION}/metadata.json
+
+        # Update versions.json
+        echo "${FIRMWARE_VERSION}" > versions.json
+        aws s3 cp versions.json s3://${S3_BUCKET}/${DEVICE_NAME}/versions.json
+
+    - name: Create Git Tag
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git tag ${{ steps.get_version.outputs.version }}
+        git push origin ${{ steps.get_version.outputs.version }}
+
+    - name: Update Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          .pio/build/production/firmware.bin
+          metadata.json
+        tag_name: ${{ steps.get_version.outputs.version }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

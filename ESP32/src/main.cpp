@@ -1,16 +1,10 @@
 #include <Arduino.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SH110X.h>
 #include "DisplayManager.h"
 #include "TMP112Sensor.h"
 #include "TemperatureController.h"
 #include "ButtonManager.h"
 #include "AppStateManager.h"
-#include "WiFiProvisionManager.h"
 #include "Settings.h"
-#include <WiFi.h>
-#include <ArduinoOTA.h>
 #include "OTAUpdater.h"
 
 constexpr int SCREEN_WIDTH = 128;
@@ -24,17 +18,14 @@ constexpr uint8_t RELAY_PIN = 10;
 
 const char *ssid = "Asus";
 const char *password = "REDACTED";
-const char* firmware_url = "https://test-esp32-firmware-updates.s3.amazonaws.com/AC%20Mate/v0.0.0/firmware.bin";
-const char* metadata_url = "https://test-esp32-firmware-updates.s3.amazonaws.com/AC%20Mate/v0.0.0/metadata.json";
 
-OTAUpdater updater(firmware_url, metadata_url);
+OTAUpdater updater("https://test-esp32-firmware-updates.s3.amazonaws.com", "AC%20Mate");
 TwoWire i2cBus(0);
 Settings settings;
 TMP112Sensor *tmp112Sensor = nullptr;
 TemperatureController *tempController = nullptr;
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &i2cBus, OLED_RESET);
 DisplayManager *displayManager = nullptr;
-WiFiProvisionManager *wifiManager = nullptr;
 AppStateManager *appStateManager = nullptr;
 ButtonManager *buttonManager = nullptr;
 
@@ -49,6 +40,16 @@ void setup()
     Serial.println(F("SSD1306 allocation failed"));
   }
 
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
   settings.begin();
   tmp112Sensor = new TMP112Sensor(TMP112_I2C_ADDRESS, &i2cBus);
   tmp112Sensor->begin();
@@ -56,12 +57,10 @@ void setup()
 
   tempController = new TemperatureController(*tmp112Sensor, RELAY_PIN, settings);
   displayManager = new DisplayManager(display);
-  wifiManager = new WiFiProvisionManager();
   appStateManager = new AppStateManager(*displayManager, *tempController, settings);
   buttonManager = new ButtonManager(*tempController, *appStateManager, updater);
 
   buttonManager->setupButtons();
-  wifiManager->begin();
 
   Serial.println("Serial communication initialized.");
 
@@ -92,7 +91,6 @@ void cleanup()
   delete tmp112Sensor;
   delete tempController;
   delete displayManager;
-  delete wifiManager;
   delete appStateManager;
   delete buttonManager;
 }

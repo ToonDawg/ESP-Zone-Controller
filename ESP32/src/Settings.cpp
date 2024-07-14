@@ -1,6 +1,7 @@
 // Settings.cpp
 
 #include "Settings.h"
+#include <TemperatureController.h>
 
 Settings::Settings() : preferences() {}
 
@@ -24,12 +25,12 @@ float Settings::getSetTemperature() {
     return preferences.getFloat("set_temp", 24.0);
 }
 
-void Settings::setMotorDirection(bool isNormal) {
-    preferences.putBool("motor_dir", isNormal);
+void Settings::setMotorDirection(MotorDirection direction) {
+    preferences.putInt("motor_dir", static_cast<int>(direction));
 }
 
-bool Settings::getMotorDirection() {
-    return preferences.getBool("motor_dir", true); 
+MotorDirection Settings::getMotorDirection() {
+    return static_cast<MotorDirection>(preferences.getInt("motor_dir", static_cast<int>(MotorDirection::Normal)));
 }
 
 void Settings::setTemperatureCalibration(float calibration) {

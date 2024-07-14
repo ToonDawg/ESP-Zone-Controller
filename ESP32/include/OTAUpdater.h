@@ -6,17 +6,21 @@
 
 class OTAUpdater {
 public:
-    OTAUpdater(const char* firmware_url, const char* metadata_url);
-    void begin();
+    OTAUpdater(const char* base_url, const char* device_name);
     bool checkForUpdates();
     void performUpdate();
 
 private:
-    const char* _firmware_url;
-    const char* _metadata_url;
-    
+    const char* _base_url;
+    const char* _device_name;
+    String _firmware_url;
+    String _metadata_url;
+
+    String getLatestVersion();
+    void updateUrls(const String& version);
     bool downloadUpdate(HTTPClient& http);
     bool finalizeUpdate();
+    String httpGet(const String& url);
 };
 
 #endif // OTA_UPDATER_H

@@ -9,9 +9,12 @@ AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureCont
       settings(settings),
       currentState(AppState::CURRENT_TEMPERATURE),
       lastAdjustmentTime(0),
-      settingsMenu("Settings", {"Temp. Calibration", "Motor Direction", "Temp. Unit", "WiFi"}),
+      settingsMenu("Settings", {"Temp. Calibration", "Motor Direction", "Temp. Unit", "Update"}),
       motorDirectionMenu("Motor Direction", {"Normal", "Reversed"}),
-      tempUnitMenu("Temp. Unit", {"Celsius", "Fahrenheit"})
+      tempUnitMenu("Temp. Unit", {"Celsius", "Fahrenheit"}),
+      updatesMenu("Updates", {"Check for Updates",
+                              "Current Version",
+                              "Update"})
 {
 }
 
@@ -129,11 +132,11 @@ void AppStateManager::selectMenuItem()
         switch (motorDirectionMenu.getSelectedIndex())
         {
         case 0:
-            settings.setMotorDirection(true);
+            settings.setMotorDirection(MotorDirection::Normal);
             setAppState(AppState::CURRENT_TEMPERATURE);
             break;
         case 1:
-            settings.setMotorDirection(false);
+            settings.setMotorDirection(MotorDirection::Reversed);
             setAppState(AppState::CURRENT_TEMPERATURE);
             break;
         default:
@@ -195,8 +198,8 @@ void AppStateManager::displaySettings()
 
 void AppStateManager::displayMotorDirectionSetting()
 {
-    bool currentDirection = settings.getMotorDirection();
-    motorDirectionMenu.setActiveIndex(currentDirection ? 0 : 1);
+    MotorDirection currentDirection = settings.getMotorDirection();
+    motorDirectionMenu.setActiveIndex(currentDirection == MotorDirection::Normal ? 0 : 1);
     displayManager.displaySettingsMenu(motorDirectionMenu);
 }
 
@@ -233,13 +236,6 @@ void AppStateManager::saveSettings()
 {
     // settings.setTemperatureUnit(/* get current temperature unit */);
     // settings.setTemperatureCalibration(/* get current temperature calibration */);
-}
-
-void AppStateManager::loadSettings()
-{
-    bool isCelsius = settings.getTemperatureUnit();
-    bool isNormalMotorDirection = settings.getMotorDirection();
-    float tempCalibration = settings.getTemperatureCalibration();
 }
 
 void AppStateManager::beginSettings()

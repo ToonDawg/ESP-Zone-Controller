@@ -2,45 +2,36 @@
 
 #include "TemperatureSensor.h"
 #include "Icons.h"
+#include "Enums.h"
 #include "Settings.h"
 
-class TemperatureController {
+class TemperatureController
+{
 public:
-    enum class Mode { Heat, Cool };
-    enum class MotorState { Open, Closed };
-
-    struct Status {
-        float setTemperature;
-        float currentTemperature;
-        Mode mode;
-        MotorState motorState;
-    };
-
-    TemperatureController(TemperatureSensor& sensor, int relayPin, Settings& settings);
+    TemperatureController(TemperatureSensor &sensor, int relayPin, Settings &settings);
 
     void update();
-    Status getStatus() const;
+    TemperatureStatus getStatus() const;
 
     void adjustTemperature(float delta);
     void adjustCalibrationTemperature(float delta);
     void toggleMode();
     void toggleMotorState();
 
-    const tImage& getModeIcon() const;
-    const tImage& getMotorStateIcon() const;
+    const tImage &getModeIcon() const;
+    const tImage &getMotorStateIcon() const;
 
 private:
     static constexpr float TEMPERATURE_THRESHOLD = 0.5f;
     static constexpr unsigned long UPDATE_INTERVAL = 2000; // ms
 
-    TemperatureSensor& temperatureSensor;
-    Settings& settings;
+    TemperatureSensor &temperatureSensor;
+    Settings &settings;
     int relayPin;
-    Status currentStatus;
+    TemperatureStatus currentStatus;
     unsigned long lastUpdateTime;
-
+    bool shouldChangeMotorState() const;
     void updateTemperature();
     void regulateTemperature();
     void updateRelayState();
-    bool shouldActivateMotor() const;
 };

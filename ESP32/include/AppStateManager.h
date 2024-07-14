@@ -36,7 +36,6 @@ public:
     void selectMenuItem();
     void beginSettings();
     void saveSettings();
-    void loadSettings();
 
 private:
     AppState currentState;
@@ -48,6 +47,7 @@ private:
     Menu settingsMenu;
     Menu motorDirectionMenu;
     Menu tempUnitMenu;
+    Menu updatesMenu;
 
     void displayCurrentTemperature();
     void displaySetTemperature();

@@ -25,7 +25,7 @@ void TemperatureController::update()
     }
 }
 
-TemperatureController::Status TemperatureController::getStatus() const
+TemperatureStatus TemperatureController::getStatus() const
 {
     return currentStatus;
 }
@@ -71,7 +71,7 @@ void TemperatureController::updateTemperature()
 
 void TemperatureController::regulateTemperature()
 {
-    if (shouldActivateMotor())
+    if (shouldChangeMotorState())
     {
         toggleMotorState();
     }
@@ -82,15 +82,30 @@ void TemperatureController::updateRelayState()
     digitalWrite(relayPin, currentStatus.motorState == MotorState::Open ? HIGH : LOW);
 }
 
-bool TemperatureController::shouldActivateMotor() const
+bool TemperatureController::shouldChangeMotorState() const
 {
-    float diff = currentStatus.currentTemperature - currentStatus.setTemperature;
-    bool isHeating = currentStatus.mode == Mode::Heat;
-    bool motorOpen = currentStatus.motorState ==
-                     (settings.getMotorDirection() ? MotorState::Open : MotorState::Closed);
+    float currentTemp = currentStatus.currentTemperature;
+    float setTemp = currentStatus.setTemperature;
+    bool isCooling = currentStatus.mode == Mode::Cool;
+    bool motorOpen = currentStatus.motorState == MotorState::Open;
+    MotorDirection direction = settings.getMotorDirection();
 
-    bool shouldOpen = isHeating ? (diff < -TEMPERATURE_THRESHOLD)
-                                : (diff > TEMPERATURE_THRESHOLD);
+    float upperThreshold = setTemp + TEMPERATURE_THRESHOLD;
+    float lowerThreshold = setTemp - TEMPERATURE_THRESHOLD;
 
-    return shouldOpen != motorOpen;
+    bool shouldBeOpen;
+
+    if (isCooling) {
+        if (currentTemp >= upperThreshold) shouldBeOpen = true;
+        else if (currentTemp <= lowerThreshold) shouldBeOpen = false;
+        else return false; 
+    } else { 
+        if (currentTemp <= lowerThreshold) shouldBeOpen = true;
+        else if (currentTemp >= upperThreshold) shouldBeOpen = false;
+        else return false; 
+    }
+
+    bool desiredState = (direction == MotorDirection::Normal) ? shouldBeOpen : !shouldBeOpen;
+
+    return desiredState != motorOpen;
 }

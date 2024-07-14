@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Preferences.h>
+#include "Enums.h"
 
 class Settings
 {
@@ -15,8 +16,8 @@ public:
     void setSetTemperature(float setTemp);
     float getSetTemperature();
 
-    void setMotorDirection(bool isNormal);
-    bool getMotorDirection();
+    void setMotorDirection(MotorDirection direction);
+    MotorDirection getMotorDirection();
 
     void setTemperatureCalibration(float calibration);
     float getTemperatureCalibration();

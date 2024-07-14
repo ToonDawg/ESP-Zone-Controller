@@ -9,7 +9,6 @@ env:
   DEVICE_NAME: ACMate
   PROJECT_DIR: ESP32
 
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -31,25 +30,23 @@ jobs:
     - name: Determine version
       id: get_version
       run: |
-        # Get the latest tag
         latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
         echo "Latest tag: $latest_tag"
         
-        # Extract components
         IFS='.' read -r major minor patch <<< "${latest_tag#v}"
         
-        # Increment patch version
         new_patch=$((patch + 1))
         new_version="v$major.$minor.$new_patch"
         
         echo "New version: $new_version"
         echo "FIRMWARE_VERSION=$new_version" >> $GITHUB_ENV
-        echo "::set-output name=version::$new_version"
+        echo "version=$new_version" >> $GITHUB_OUTPUT
 
     - name: Build firmware
       run: |
         cd ${{ env.PROJECT_DIR }}
         pio run -e production
+        ls -R .pio/build/production/
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -60,11 +57,11 @@ jobs:
 
     - name: Deploy to S3
       run: |
-        # Create new version folder
-        aws s3 mb s3://${S3_BUCKET}/${DEVICE_NAME}/${FIRMWARE_VERSION} || true
+        # Create new version folder (ignore error if it already exists)
+        aws s3api put-object --bucket ${S3_BUCKET} --key ${DEVICE_NAME}/${FIRMWARE_VERSION}/
 
         # Upload firmware
-        aws s3 cp .pio/build/production/firmware.bin s3://${S3_BUCKET}/${DEVICE_NAME}/${FIRMWARE_VERSION}/firmware.bin
+        aws s3 cp ${{ env.PROJECT_DIR }}/.pio/build/production/firmware.bin s3://${S3_BUCKET}/${DEVICE_NAME}/${FIRMWARE_VERSION}/firmware.bin
 
         # Create and upload metadata file
         echo "{\"version\":\"${FIRMWARE_VERSION}\",\"date\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > metadata.json
@@ -75,6 +72,7 @@ jobs:
         aws s3 cp versions.json s3://${S3_BUCKET}/${DEVICE_NAME}/versions.json
 
     - name: Create Git Tag
+      if: success()
       run: |
         git config user.name github-actions
         git config user.email github-actions@github.com
@@ -82,10 +80,11 @@ jobs:
         git push origin ${{ steps.get_version.outputs.version }}
 
     - name: Update Release
+      if: success()
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          .pio/build/production/firmware.bin
+          ${{ env.PROJECT_DIR }}/.pio/build/production/firmware.bin
           metadata.json
         tag_name: ${{ steps.get_version.outputs.version }}
       env:

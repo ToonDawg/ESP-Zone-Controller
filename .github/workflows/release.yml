@@ -12,11 +12,14 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -57,27 +60,23 @@ jobs:
 
     - name: Deploy to S3
       run: |
-        # Create new version folder (ignore error if it already exists)
         aws s3api put-object --bucket ${S3_BUCKET} --key ${DEVICE_NAME}/${FIRMWARE_VERSION}/
 
-        # Upload firmware
         aws s3 cp ${{ env.PROJECT_DIR }}/.pio/build/production/firmware.bin s3://${S3_BUCKET}/${DEVICE_NAME}/${FIRMWARE_VERSION}/firmware.bin
 
-        # Create and upload metadata file
         echo "{\"version\":\"${FIRMWARE_VERSION}\",\"date\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > metadata.json
         aws s3 cp metadata.json s3://${S3_BUCKET}/${DEVICE_NAME}/${FIRMWARE_VERSION}/metadata.json
 
-        # Update versions.json
         echo "${FIRMWARE_VERSION}" > versions.json
         aws s3 cp versions.json s3://${S3_BUCKET}/${DEVICE_NAME}/versions.json
 
-    - name: Create Git Tag
+    - name: Create and Push Git Tag
       if: success()
       run: |
         git config user.name github-actions
         git config user.email github-actions@github.com
         git tag ${{ steps.get_version.outputs.version }}
-        git push origin ${{ steps.get_version.outputs.version }}
+        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ${{ steps.get_version.outputs.version }}
 
     - name: Update Release
       if: success()

@@ -9,11 +9,11 @@ AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureCont
       settings(settings),
       currentState(AppState::CURRENT_TEMPERATURE),
       lastAdjustmentTime(0),
-      settingsMenu("Settings", {"Temp. Calibration", "Motor Direction", "Temp. Unit", "Update"}),
+      settingsMenu("Settings", {"Temp. Calibration", "Motor Direction", "Temp. Unit", "About"}),
       motorDirectionMenu("Motor Direction", {"Normal", "Reversed"}),
       tempUnitMenu("Temp. Unit", {"Celsius", "Fahrenheit"}),
-      updatesMenu("Updates", {"Check for Updates",
-                              "Current Version",
+      updatesMenu("About", {"Check for Updates",
+                              "Device Details",
                               "Update"})
 {
 }
@@ -45,7 +45,7 @@ void AppStateManager::display()
     case AppState::SETTINGS:
         displaySettings();
         break;
-    case AppState::OTA_UPDATE:
+    case AppState::ABOUT:
         displayWiFiProvisioning();
         break;
     case AppState::MOTOR_DIRECTION:
@@ -123,7 +123,7 @@ void AppStateManager::selectMenuItem()
             setAppState(AppState::TEMPERATURE_UNIT);
             break;
         case 3:
-            setAppState(AppState::OTA_UPDATE);
+            setAppState(AppState::ABOUT);
             break;
         }
         break;
@@ -212,9 +212,7 @@ void AppStateManager::displayTemperatureUnitSetting()
 
 void AppStateManager::displayWiFiProvisioning()
 {
-    // Implement WiFi provisioning display
-    String lines[2] = {"OTA Update", "Press A to Update"};
-    displayManager.displayCentre(lines, 1);
+    displayManager.displaySettingsMenu(updatesMenu);
 }
 
 void AppStateManager::manageBluetoothStatus()

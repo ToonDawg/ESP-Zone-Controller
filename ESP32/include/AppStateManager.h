@@ -16,7 +16,7 @@ public:
         MOTOR_DIRECTION,
         TEMPERATURE_CALIBRATION,
         TEMPERATURE_UNIT,
-        OTA_UPDATE
+        ABOUT
     };
 
     enum class TemperatureUnit {

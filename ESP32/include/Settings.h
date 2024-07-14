@@ -22,6 +22,9 @@ public:
     void setTemperatureCalibration(float calibration);
     float getTemperatureCalibration();
 
+    void setCurrentSoftwareVersion(String version);
+    String getCurrentSoftwareVersion();
+
     void updateAllSettings(bool isCelsius, bool isNormal, float calibration);
 
 private:

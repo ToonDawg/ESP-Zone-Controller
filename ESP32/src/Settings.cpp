@@ -41,6 +41,14 @@ float Settings::getTemperatureCalibration() {
     return preferences.getFloat("temp_cal", 0.0); 
 }
 
+void Settings::setCurrentSoftwareVersion(String version) {
+    preferences.putString("current_ver", version);
+}
+
+String Settings::getCurrentSoftwareVersion() {
+    return preferences.getString("current_ver", "v0.0.2"); 
+}
+
 void Settings::updateAllSettings(bool isCelsius, bool isNormal, float calibration) {
     preferences.putBool("temp_unit", isCelsius);
     preferences.putBool("motor_dir", isNormal);

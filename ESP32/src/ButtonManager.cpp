@@ -103,6 +103,7 @@ void ButtonManager::handleIncreaseInCurrentState()
     case AppStateManager::AppState::SETTINGS:
     case AppStateManager::AppState::MOTOR_DIRECTION:
     case AppStateManager::AppState::TEMPERATURE_UNIT:
+    case AppStateManager::AppState::ABOUT:
         appStateManager.menuNavigateUp();
         break;
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
@@ -123,6 +124,7 @@ void ButtonManager::handleDecreaseInCurrentState()
     case AppStateManager::AppState::SETTINGS:
     case AppStateManager::AppState::MOTOR_DIRECTION:
     case AppStateManager::AppState::TEMPERATURE_UNIT:
+    case AppStateManager::AppState::ABOUT:
         appStateManager.menuNavigateDown();
         break;
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
@@ -143,22 +145,13 @@ void ButtonManager::handleButtonAInCurrentState()
     case AppStateManager::AppState::SETTINGS:
     case AppStateManager::AppState::MOTOR_DIRECTION:
     case AppStateManager::AppState::TEMPERATURE_UNIT:
+    case AppStateManager::AppState::ABOUT:
+
         appStateManager.selectMenuItem();
         break;
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
         appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
         break;
-    case AppStateManager::AppState::OTA_UPDATE:
-        if (updater.checkForUpdates())
-        {
-            Serial.println("Update available. Starting update process...");
-            updater.performUpdate();
-        }
-        else
-        {
-            Serial.println("No update available.");
-        }
-
     default:
         appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
         tempController.toggleMode();

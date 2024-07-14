@@ -19,7 +19,7 @@ constexpr uint8_t RELAY_PIN = 10;
 const char *ssid = "Asus";
 const char *password = "REDACTED";
 
-OTAUpdater updater("https://test-esp32-firmware-updates.s3.amazonaws.com", "AC%20Mate");
+OTAUpdater updater("https://test-esp32-firmware-updates.s3.amazonaws.com", "ACMate");
 TwoWire i2cBus(0);
 Settings settings;
 TMP112Sensor *tmp112Sensor = nullptr;

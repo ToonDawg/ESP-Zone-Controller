@@ -1,7 +1,7 @@
 {
   "version": "0.0.1",
   "releaseDate": "2024-07-11",
-  "deviceType": "AC Mate",
+  "deviceType": "ACMate",
   "fileName": "firmware.bin",
   "md5Checksum": "<MD5_CHECKSUM_TODO>",
   "description": "Initial release of AC Mate firmware",

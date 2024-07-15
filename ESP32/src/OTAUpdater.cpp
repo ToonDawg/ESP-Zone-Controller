@@ -28,6 +28,7 @@ String OTAUpdater::getLatestVersion()
     {
         Serial.println(payload);
         _latestVersion = payload;
+        updateUrls(_latestVersion);
         return payload;
     }
 
@@ -62,7 +63,6 @@ bool OTAUpdater::isUpdateAvailable(const String &currentVersion)
         return false;
     }
 
-    updateUrls(latestVersion);
     String metadata = httpGet(_metadata_url);
 
     if (!metadata.isEmpty())

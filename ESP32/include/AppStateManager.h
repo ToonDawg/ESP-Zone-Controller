@@ -4,10 +4,13 @@
 #include "TemperatureController.h"
 #include "Menu.h"
 #include "Settings.h"
+#include "OTAUpdater.h"
 
-class AppStateManager {
+class AppStateManager
+{
 public:
-    enum class AppState {
+    enum class AppState
+    {
         CURRENT_TEMPERATURE,
         SET_TEMPERATURE,
         OFF,
@@ -16,16 +19,21 @@ public:
         MOTOR_DIRECTION,
         TEMPERATURE_CALIBRATION,
         TEMPERATURE_UNIT,
-        ABOUT
+        ABOUT,
+        CHECK_FOR_UPDATES,
+        UPDATE,
+        DEVICE_DETAILS,
+        UPDATING
     };
 
-    enum class TemperatureUnit {
+    enum class TemperatureUnit
+    {
         CELSIUS,
         FAHRENHEIT
     };
 
-    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, Settings& settings);
-    
+    AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater);
+
     void setAppState(AppState state);
     AppState getAppState() const;
     void display();
@@ -34,20 +42,20 @@ public:
     void menuNavigateUp();
     void menuNavigateDown();
     void selectMenuItem();
-    void beginSettings();
-    void saveSettings();
 
 private:
     AppState currentState;
-    DisplayManager& displayManager;
-    TemperatureController& temperatureController;
-    Settings& settings;
+    DisplayManager &displayManager;
+    TemperatureController &temperatureController;
+    Settings &settings;
     unsigned long lastAdjustmentTime;
-    
+
     Menu settingsMenu;
     Menu motorDirectionMenu;
     Menu tempUnitMenu;
-    Menu updatesMenu;
+    Menu aboutMenu;
+
+    OTAUpdater &updater;
 
     void displayCurrentTemperature();
     void displaySetTemperature();
@@ -57,6 +65,13 @@ private:
     void displayWiFiProvisioning();
     void displayMotorDirectionSetting();
     void displayTemperatureUnitSetting();
-    void manageBluetoothStatus();
+    void displayCheckForUpdates();
+    void displayUpdate();
+    void displayDeviceDetails();
+    void updateLatestVersionInSettings(const String &version);
     void handleStateTimeouts();
+    void displayUpdating();
+    bool shouldCheckForUpdates();
+    
+
 };

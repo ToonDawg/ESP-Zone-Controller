@@ -46,11 +46,27 @@ void Settings::setCurrentSoftwareVersion(String version) {
 }
 
 String Settings::getCurrentSoftwareVersion() {
-    return preferences.getString("current_ver", "v0.0.2"); 
+    return preferences.getString("current_ver", "v0.0.2");
 }
 
 void Settings::updateAllSettings(bool isCelsius, bool isNormal, float calibration) {
     preferences.putBool("temp_unit", isCelsius);
     preferences.putBool("motor_dir", isNormal);
     preferences.putFloat("temp_cal", calibration);
+}
+
+void Settings::setLastUpdateCheck(unsigned long time) {
+    preferences.putULong("last_update", time);
+}
+
+unsigned long Settings::getLastUpdateCheck() {
+    return preferences.getULong("last_update", 0);
+}
+
+void Settings::setLatestAvailableVersion(const String& version) {
+    preferences.putString("latest_ver", version);
+}
+
+String Settings::getLatestAvailableVersion() {
+    return preferences.getString("latest_ver", "");
 }

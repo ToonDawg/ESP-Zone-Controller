@@ -3,76 +3,94 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
-#include <Wire.h>
 #include "Icons.h"
-#include <vector>
 #include "Menu.h"
+#include <Loader.h>
 
-
-class DisplayManager {
+class DisplayManager
+{
 public:
-    enum class TextAlignment { LEFT, CENTER, RIGHT };
-    enum class FontSize { SMALL, LARGE };
-    
-    struct TextStyle {
+    enum class FontSize
+    {
+        SMALL,
+        MEDIUM,
+        LARGE
+    };
+    enum class TextAlignment
+    {
+        LEFT,
+        CENTER,
+        RIGHT
+    };
+
+    struct TextStyle
+    {
         FontSize fontSize;
         uint16_t color;
         TextAlignment alignment;
-        
-        TextStyle(FontSize size = FontSize::SMALL, 
-                  uint16_t col = MONOOLED_WHITE, 
-                  TextAlignment align = TextAlignment::LEFT)
+
+        TextStyle(FontSize size, uint16_t col, TextAlignment align)
             : fontSize(size), color(col), alignment(align) {}
+
+        TextStyle() : fontSize(FontSize::MEDIUM), color(MONOOLED_WHITE), alignment(TextAlignment::LEFT) {}
     };
 
-    DisplayManager(Adafruit_SH1106G& display);
+    DisplayManager(Adafruit_SH1106G &display);
 
-    // Main display functions
-    void displayTemperature(float temperature);
-    void displayIconBottomLeft(const tImage& icon);
-    void displayIconBottomRight(const tImage& icon);
-    void displayBottomCenterText(const String& text);
-
-    // Additional display functions
+    void displayTemperature(float temperature, tImage tempIcon);
+    void displayIconBottomLeft(const tImage &icon);
+    void displayIconBottomRight(const tImage &icon);
+    void displayBottomCenterText(const String &text);
     void displayOff();
     void render();
-    void displayCentre(const String lines[], int numLines, const TextStyle& style = TextStyle());
+    void displayCenteredWrappedText(const String &text);
     void displaySettingsMenu(const Menu &menu);
+    void displayMenuTitle(const String title);
 
-    // Utility functions
     uint16_t getWidth() const { return display.width(); }
     uint16_t getHeight() const { return display.height(); }
+    void showLoader();
+    void showLoaderWithText(const String &text);
+    void displayLabelAndContent(const String &label, const String &content, int16_t y);
 
-protected:
-    Adafruit_SH1106G& display;
-    static const GFXfont smallFont;
+private:
+    Adafruit_SH1106G &display;
+    static const GFXfont mediumFont;
     static const GFXfont largeFont;
+    LoaderAnimation loader;
 
-    // Drawing helper functions
-    void drawText(const String& text, int16_t x, int16_t y, const TextStyle& style);
-    int16_t calculateTextWidth(const String& text, const GFXfont* font);
-    int16_t calculateTextHeight(const String& text, const GFXfont* font);
-    void draw8BitImage(int16_t x, int16_t y, const tImage& image);
-    
-    // Menu helper functions
-    int16_t displayMenuTitle(const String& title);
-    int16_t getStringWidth(const String &str);
+    void drawText(const String &text, int16_t x, int16_t y, const TextStyle &style);
+    void setFont(FontSize size);
+    int16_t calculateTextWidth(const String &text);
+    int16_t calculateTextHeight(const String &text);
+    void draw8BitImage(int16_t x, int16_t y, const tImage &image);
+
     String cutoffText(const String &text, int16_t maxWidth);
     void displayMenuItem(const String &item, bool selected, bool active, int16_t y, int16_t verticalOffset, int16_t textHeight);
 
-    // Font helper function
-    const GFXfont* getFontForSize(FontSize size) const;
-
-    // Constants
     static constexpr int16_t DISPLAY_SIDE_MARGIN = 4;
     static constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;
     static constexpr int16_t FONT_VERTICAL_PADDING = 6;
 
-    unsigned long scrollStartTime = 0;
-    int16_t scrollOffset = 0;
-    String currentScrollingItem;
-    const unsigned long SCROLL_DELAY = 2000;
-    const unsigned long SCROLL_SPEED = 100;
+    struct ScrollInfo
+    {
+        unsigned long startTime;
+        int16_t offset;
+        String currentItem;
+        static constexpr unsigned long DELAY = 2000;
+        static constexpr unsigned long SPEED = 100;
+
+        ScrollInfo() : startTime(0), offset(0), currentItem("") {}
+
+        void reset(const String &item)
+        {
+            startTime = millis();
+            offset = 0;
+            currentItem = item;
+        }
+    };
+
+    ScrollInfo scroll;
 };
 
 #endif // DISPLAY_MANAGER_H

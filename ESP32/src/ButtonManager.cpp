@@ -146,11 +146,14 @@ void ButtonManager::handleButtonAInCurrentState()
     case AppStateManager::AppState::MOTOR_DIRECTION:
     case AppStateManager::AppState::TEMPERATURE_UNIT:
     case AppStateManager::AppState::ABOUT:
-
         appStateManager.selectMenuItem();
         break;
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
         appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
+        break;
+    case AppStateManager::AppState::UPDATE:
+        appStateManager.setAppState(AppStateManager::AppState::UPDATING);
+        updater.performUpdate();
         break;
     default:
         appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);

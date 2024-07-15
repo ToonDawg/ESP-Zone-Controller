@@ -3,18 +3,17 @@
 #include "AppStateManager.h"
 #include "Settings.h"
 
-AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings)
-    : displayManager(displayManager),
+AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater)
+    : currentState(AppState::CURRENT_TEMPERATURE),
+      displayManager(displayManager),
       temperatureController(tempController),
       settings(settings),
-      currentState(AppState::CURRENT_TEMPERATURE),
+      updater(updater),
       lastAdjustmentTime(0),
       settingsMenu("Settings", {"Temp. Calibration", "Motor Direction", "Temp. Unit", "About"}),
       motorDirectionMenu("Motor Direction", {"Normal", "Reversed"}),
       tempUnitMenu("Temp. Unit", {"Celsius", "Fahrenheit"}),
-      updatesMenu("About", {"Check for Updates",
-                              "Device Details",
-                              "Update"})
+      aboutMenu("About", {"Check for Updates", "Device Details", "Update"})
 {
 }
 
@@ -57,13 +56,24 @@ void AppStateManager::display()
     case AppState::TEMPERATURE_UNIT:
         displayTemperatureUnitSetting();
         break;
+    case AppState::CHECK_FOR_UPDATES:
+        displayCheckForUpdates();
+        break;
+    case AppState::UPDATE:
+        displayUpdate();
+        break;
+    case AppState::DEVICE_DETAILS:
+        displayDeviceDetails();
+        break;
+    case AppState::UPDATING:
+        displayUpdating();
+        break;
     }
     displayManager.render();
 }
 
 void AppStateManager::tick()
 {
-    manageBluetoothStatus();
     handleStateTimeouts();
 }
 
@@ -86,6 +96,10 @@ void AppStateManager::menuNavigateUp()
     {
         tempUnitMenu.navigateUp();
     }
+    else if (currentState == AppState::ABOUT)
+    {
+        aboutMenu.navigateUp();
+    }
     display();
 }
 
@@ -102,6 +116,10 @@ void AppStateManager::menuNavigateDown()
     else if (currentState == AppState::TEMPERATURE_UNIT)
     {
         tempUnitMenu.navigateDown();
+    }
+    else if (currentState == AppState::ABOUT)
+    {
+        aboutMenu.navigateDown();
     }
     display();
 }
@@ -162,6 +180,24 @@ void AppStateManager::selectMenuItem()
         }
         break;
 
+    case AppState::ABOUT:
+        switch (aboutMenu.getSelectedIndex())
+        {
+        case 0:
+            setAppState(AppState::CHECK_FOR_UPDATES);
+            break;
+        case 1:
+            setAppState(AppState::DEVICE_DETAILS);
+            break;
+        case 2:
+            setAppState(AppState::UPDATE);
+            break;
+        default:
+            setAppState(AppState::CURRENT_TEMPERATURE);
+            break;
+        }
+        break;
+
     default:
         break;
     }
@@ -169,20 +205,66 @@ void AppStateManager::selectMenuItem()
 
 void AppStateManager::displayCurrentTemperature()
 {
-    displayManager.displayTemperature(temperatureController.getStatus().currentTemperature);
+    tImage tempIcon = settings.getTemperatureUnit() ? celciusIcon : fahrenheitIcon;
+    displayManager.displayTemperature(temperatureController.getStatus().currentTemperature, tempIcon);
     displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
     displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
 }
 
+void AppStateManager::displayCheckForUpdates()
+{
+    displayManager.displayMenuTitle("Check for updates");
+
+    if (shouldCheckForUpdates())
+    {
+        displayManager.showLoaderWithText("Checking...");
+        String latestVersion = updater.getLatestVersion();
+        settings.setLastUpdateCheck(millis());
+        updateLatestVersionInSettings(latestVersion);
+
+        if (latestVersion.isEmpty())
+        {
+            displayManager.showLoaderWithText("No update available");
+        }
+        else
+        {
+            displayManager.showLoaderWithText("Update available: " + latestVersion);
+        }
+    }
+    else
+    {
+        displayManager.displayLabelAndContent("Latest version", settings.getLatestAvailableVersion(), 16);
+        displayManager.displayLabelAndContent("Current version", settings.getCurrentSoftwareVersion(), 40);
+    }
+}
+
+void AppStateManager::updateLatestVersionInSettings(const String &version)
+{
+    if (!version.isEmpty())
+    {
+        settings.setLatestAvailableVersion(version);
+    }
+}
+
+bool AppStateManager::shouldCheckForUpdates()
+{
+    unsigned long lastCheck = settings.getLastUpdateCheck();
+    unsigned long currentTime = millis();
+
+    return (currentTime - lastCheck) > 600000 || lastCheck == 0;
+}
+
 void AppStateManager::displaySetTemperature()
 {
-    displayManager.displayTemperature(temperatureController.getStatus().setTemperature);
+    tImage tempIcon = settings.getTemperatureUnit() ? celciusIcon : fahrenheitIcon;
+    displayManager.displayTemperature(temperatureController.getStatus().setTemperature, tempIcon);
     displayManager.displayBottomCenterText("Set Temp");
 }
 
 void AppStateManager::displayTemperatureCalibration()
 {
-    displayManager.displayTemperature(settings.getTemperatureCalibration());
+    tImage tempIcon = settings.getTemperatureUnit() ? celciusIcon : fahrenheitIcon;
+    displayManager.displayTemperature(settings.getTemperatureCalibration(), tempIcon);
     displayManager.displayBottomCenterText("Temp. Calibration");
 }
 
@@ -212,12 +294,7 @@ void AppStateManager::displayTemperatureUnitSetting()
 
 void AppStateManager::displayWiFiProvisioning()
 {
-    displayManager.displaySettingsMenu(updatesMenu);
-}
-
-void AppStateManager::manageBluetoothStatus()
-{
-    // Implement Bluetooth status management
+    displayManager.displaySettingsMenu(aboutMenu);
 }
 
 void AppStateManager::handleStateTimeouts()
@@ -230,13 +307,39 @@ void AppStateManager::handleStateTimeouts()
     }
 }
 
-void AppStateManager::saveSettings()
+void AppStateManager::displayUpdate()
 {
-    // settings.setTemperatureUnit(/* get current temperature unit */);
-    // settings.setTemperatureCalibration(/* get current temperature calibration */);
+    String latestVersion = settings.getLatestAvailableVersion();
+    String currentVersion = settings.getCurrentSoftwareVersion();
+
+    if (shouldCheckForUpdates() || latestVersion.isEmpty())
+    {
+        displayManager.showLoaderWithText("Checking for updates...");
+        latestVersion = updater.getLatestVersion();
+        settings.setLastUpdateCheck(millis());
+        updateLatestVersionInSettings(latestVersion);
+    }
+
+    if (latestVersion.isEmpty())
+    {
+        displayManager.displayCenteredWrappedText("No update available");
+    }
+    else if (updater.isNewerVersion(currentVersion, latestVersion))
+    {
+        displayManager.displayCenteredWrappedText(latestVersion + " Ready. Confirm update?");
+    }
+    else
+    {
+        displayManager.displayCenteredWrappedText("You have the latest version");
+    }
 }
 
-void AppStateManager::beginSettings()
+void AppStateManager::displayDeviceDetails()
 {
-    settings.begin();
+    displayManager.displayMenuTitle("Device Details");
+}
+
+void AppStateManager::displayUpdating()
+{
+    displayManager.displayCenteredWrappedText("Updating...");
 }

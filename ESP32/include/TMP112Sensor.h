@@ -26,6 +26,9 @@ public:
      */
     float readTemperature() override;
 
+    float readTemperatureF() override;
+
+
     /**
      * @brief Set a temperature offset for calibration
      * 

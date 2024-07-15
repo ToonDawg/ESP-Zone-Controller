@@ -5,6 +5,7 @@ class TemperatureSensor {
 public:
     virtual void begin() = 0;
     virtual float readTemperature() = 0;
+    virtual float readTemperatureF() = 0;
     virtual void setTemperatureOffset(float offset) = 0;
 
     virtual ~TemperatureSensor() = default; 

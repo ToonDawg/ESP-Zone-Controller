@@ -43,6 +43,31 @@ float TMP112Sensor::readTemperature() {
     return temperature + temperatureOffset;
 }
 
+float TMP112Sensor::readTemperatureF() {
+    wire->beginTransmission(i2cAddress);
+    wire->write(0x00);  // Temperature register
+    if (wire->endTransmission() != 0) {
+        Serial.println("TMP112: Error setting temperature register");
+        return INVALID_TEMPERATURE;
+    }
+    
+    if (wire->requestFrom(i2cAddress, (uint8_t)2) != 2) {
+        Serial.println("TMP112: Error requesting data");
+        return INVALID_TEMPERATURE;
+    }
+    
+    uint8_t msb = wire->read();
+    uint8_t lsb = wire->read();
+    
+    int16_t rawTemperature = ((msb << 8) | lsb);
+    rawTemperature >>= 4;  // Right-shift by 4 for 12-bit resolution
+    
+    float temperature = rawTemperature * 0.0625f;
+    float fTemp = temperature * 1.8 + 32;
+    
+    return fTemp + temperatureOffset;
+}
+
 void TMP112Sensor::setTemperatureOffset(float offset) {
     temperatureOffset = offset;
 }

@@ -7,67 +7,94 @@
 #include "Settings.h"
 #include "OTAUpdater.h"
 
-constexpr int SCREEN_WIDTH = 128;
-constexpr int SCREEN_HEIGHT = 64;
-constexpr uint8_t DISPLAY_I2C_ADDRESS = 0x3C;
-constexpr uint8_t TMP112_I2C_ADDRESS = 0x48;
-constexpr uint8_t I2C_SDA_PIN = 5;
-constexpr uint8_t I2C_SCL_PIN = 6;
-constexpr int8_t OLED_RESET = -1;
-constexpr uint8_t RELAY_PIN = 10;
+// Use PROGMEM for constant strings
+const char PROGMEM SSID[] = "Asus";
+const char PROGMEM PASSWORD[] = "REDACTED";
+const char UPDATE_URL[] = "https://test-esp32-firmware-updates.s3.amazonaws.com";
+const char DEVICE_NAME[] = "ACMate";
 
-const char *ssid = "Asus";
-const char *password = "REDACTED";
+// Use namespaces to group related constants
+namespace Pins
+{
+  constexpr uint8_t I2C_SDA = 5;
+  constexpr uint8_t I2C_SCL = 6;
+  constexpr uint8_t RELAY = 10;
+}
 
-OTAUpdater updater("https://test-esp32-firmware-updates.s3.amazonaws.com", "ACMate");
-TwoWire i2cBus(0);
-Settings settings;
+namespace I2CAddresses
+{
+  constexpr uint8_t DISPLAYADDR = 0x3C;
+  constexpr uint8_t TMP112 = 0x48;
+}
+
+namespace DisplayConfig
+{
+  constexpr int WIDTH = 128;
+  constexpr int HEIGHT = 64;
+  constexpr int8_t RESET = -1;
+}
+
+// Use forward declarations and pointers to reduce header dependencies
+class OTAUpdater;
+class TMP112Sensor;
+class TemperatureController;
+class DisplayManager;
+class AppStateManager;
+class ButtonManager;
+
+OTAUpdater *updater = nullptr;
 TMP112Sensor *tmp112Sensor = nullptr;
 TemperatureController *tempController = nullptr;
-Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &i2cBus, OLED_RESET);
 DisplayManager *displayManager = nullptr;
 AppStateManager *appStateManager = nullptr;
 ButtonManager *buttonManager = nullptr;
 
+TwoWire i2cBus(0);
+Settings settings;
+Adafruit_SH1106G display(DisplayConfig::WIDTH, DisplayConfig::HEIGHT, &i2cBus, DisplayConfig::RESET);
+
 void setup()
 {
   Serial.begin(115200);
-  i2cBus.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+  i2cBus.begin(Pins::I2C_SDA, Pins::I2C_SCL);
   i2cBus.setClock(100000);
 
-  if (!display.begin(DISPLAY_I2C_ADDRESS, true))
+  if (!display.begin(I2CAddresses::DISPLAYADDR, true))
   {
     Serial.println(F("SSD1306 allocation failed"));
+    return;
   }
 
-  WiFi.begin(ssid, password);
+  WiFi.begin(FPSTR(SSID), FPSTR(PASSWORD));
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(1000);
-    Serial.println("Connecting to WiFi...");
+    Serial.println(F("Connecting to WiFi..."));
   }
-  Serial.println("Connected to WiFi");
-  Serial.print("IP address: ");
+  Serial.println(F("Connected to WiFi"));
+  Serial.print(F("IP address: "));
   Serial.println(WiFi.localIP());
 
   settings.begin();
-  tmp112Sensor = new TMP112Sensor(TMP112_I2C_ADDRESS, &i2cBus);
+  tmp112Sensor = new TMP112Sensor(I2CAddresses::TMP112, &i2cBus);
   tmp112Sensor->begin();
   tmp112Sensor->setTemperatureOffset(settings.getTemperatureCalibration());
 
-  tempController = new TemperatureController(*tmp112Sensor, RELAY_PIN, settings);
+  tempController = new TemperatureController(*tmp112Sensor, Pins::RELAY, settings);
   displayManager = new DisplayManager(display);
-  appStateManager = new AppStateManager(*displayManager, *tempController, settings);
-  buttonManager = new ButtonManager(*tempController, *appStateManager, updater);
 
+  updater = new OTAUpdater(UPDATE_URL, DEVICE_NAME, settings);
+  appStateManager = new AppStateManager(*displayManager, *tempController, settings, *updater);
+
+  buttonManager = new ButtonManager(*tempController, *appStateManager, *updater);
   buttonManager->setupButtons();
 
-  Serial.println("Serial communication initialized.");
+  Serial.println(F("Initialization complete."));
 
   float setTemp = settings.getSetTemperature();
-  Serial.print("Set Temperature: ");
+  Serial.print(F("Set Temperature: "));
   Serial.print(setTemp);
-  Serial.println(" °C");
+  Serial.println(F(" °C"));
 
   display.clearDisplay();
   display.setTextSize(1);
@@ -84,13 +111,4 @@ void loop()
 
   display.clearDisplay();
   appStateManager->display();
-}
-
-void cleanup()
-{
-  delete tmp112Sensor;
-  delete tempController;
-  delete displayManager;
-  delete appStateManager;
-  delete buttonManager;
 }

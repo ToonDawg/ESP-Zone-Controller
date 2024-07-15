@@ -66,7 +66,14 @@ const tImage &TemperatureController::getMotorStateIcon() const
 
 void TemperatureController::updateTemperature()
 {
-    currentStatus.currentTemperature = temperatureSensor.readTemperature();
+    if (settings.getTemperatureUnit())
+    {
+        currentStatus.currentTemperature = temperatureSensor.readTemperature();
+    }
+    else
+    {
+        currentStatus.currentTemperature = temperatureSensor.readTemperatureF();
+    }
 }
 
 void TemperatureController::regulateTemperature()
@@ -95,14 +102,23 @@ bool TemperatureController::shouldChangeMotorState() const
 
     bool shouldBeOpen;
 
-    if (isCooling) {
-        if (currentTemp >= upperThreshold) shouldBeOpen = true;
-        else if (currentTemp <= lowerThreshold) shouldBeOpen = false;
-        else return false; 
-    } else { 
-        if (currentTemp <= lowerThreshold) shouldBeOpen = true;
-        else if (currentTemp >= upperThreshold) shouldBeOpen = false;
-        else return false; 
+    if (isCooling)
+    {
+        if (currentTemp >= upperThreshold)
+            shouldBeOpen = true;
+        else if (currentTemp <= lowerThreshold)
+            shouldBeOpen = false;
+        else
+            return false;
+    }
+    else
+    {
+        if (currentTemp <= lowerThreshold)
+            shouldBeOpen = true;
+        else if (currentTemp >= upperThreshold)
+            shouldBeOpen = false;
+        else
+            return false;
     }
 
     bool desiredState = (direction == MotorDirection::Normal) ? shouldBeOpen : !shouldBeOpen;

@@ -3,24 +3,30 @@
 
 #include <Arduino.h>
 #include <HTTPClient.h>
+#include "Settings.h"
 
-class OTAUpdater {
+class OTAUpdater
+{
 public:
-    OTAUpdater(const char* base_url, const char* device_name);
-    bool checkForUpdates();
+    OTAUpdater(const char *base_url, const char *device_name, Settings &settings);
+    bool isUpdateAvailable(const String &currentVersion);
     void performUpdate();
+    String getLatestVersion();
+    String getStoredLatestVersion() const { return _latestVersion; }
+    bool isNewerVersion(const String &currentVersion, const String &latestVersion);
 
 private:
-    const char* _base_url;
-    const char* _device_name;
+    const char *_base_url;
+    const char *_device_name;
     String _firmware_url;
     String _metadata_url;
-
-    String getLatestVersion();
-    void updateUrls(const String& version);
-    bool downloadUpdate(HTTPClient& http);
+    String _latestVersion;
+    Settings &_settings;
+    void updateUrls(const String &version);
+    bool downloadUpdate(HTTPClient &http);
     bool finalizeUpdate();
-    String httpGet(const String& url);
+    String httpGet(const String &url);
+    int compareVersions(const String &v1, const String &v2);
 };
 
 #endif // OTA_UPDATER_H

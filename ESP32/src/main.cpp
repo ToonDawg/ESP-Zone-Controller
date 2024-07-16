@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include "DisplayManager.h"
-#include "TMP112Sensor.h"
 #include "TemperatureController.h"
 #include "ButtonManager.h"
 #include "AppStateManager.h"
 #include "Settings.h"
 #include "OTAUpdater.h"
+#include "DS18B20Sensor.h"
 
 // Use PROGMEM for constant strings
 const char PROGMEM SSID[] = "Asus";
@@ -18,6 +18,7 @@ namespace Pins
 {
   constexpr uint8_t I2C_SDA = 5;
   constexpr uint8_t I2C_SCL = 6;
+  constexpr uint8_t TEMP_SENSOR = 0;
   constexpr uint8_t RELAY = 10;
 }
 
@@ -34,16 +35,8 @@ namespace DisplayConfig
   constexpr int8_t RESET = -1;
 }
 
-// Use forward declarations and pointers to reduce header dependencies
-class OTAUpdater;
-class TMP112Sensor;
-class TemperatureController;
-class DisplayManager;
-class AppStateManager;
-class ButtonManager;
-
 OTAUpdater *updater = nullptr;
-TMP112Sensor *tmp112Sensor = nullptr;
+DS18B20Sensor *ds18b20Sensor = nullptr;
 TemperatureController *tempController = nullptr;
 DisplayManager *displayManager = nullptr;
 AppStateManager *appStateManager = nullptr;
@@ -76,11 +69,11 @@ void setup()
   Serial.println(WiFi.localIP());
 
   settings.begin();
-  tmp112Sensor = new TMP112Sensor(I2CAddresses::TMP112, &i2cBus);
-  tmp112Sensor->begin();
-  tmp112Sensor->setTemperatureOffset(settings.getTemperatureCalibration());
+  ds18b20Sensor = new DS18B20Sensor(Pins::TEMP_SENSOR);
+  ds18b20Sensor->begin();
+  ds18b20Sensor->setTemperatureOffset(settings.getTemperatureCalibration());
 
-  tempController = new TemperatureController(*tmp112Sensor, Pins::RELAY, settings);
+  tempController = new TemperatureController(*ds18b20Sensor, Pins::RELAY, settings);
   displayManager = new DisplayManager(display);
 
   updater = new OTAUpdater(UPDATE_URL, DEVICE_NAME, settings);

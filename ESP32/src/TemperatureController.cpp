@@ -17,12 +17,16 @@ TemperatureController::TemperatureController(TemperatureSensor &sensor, int rela
 void TemperatureController::update()
 {
     unsigned long currentTime = millis();
+
     if (currentTime - lastUpdateTime >= UPDATE_INTERVAL)
     {
         lastUpdateTime = currentTime;
-        updateTemperature();
-        regulateTemperature();
+        temperatureSensor.update();
+        currentStatus.currentTemperature = settings.getTemperatureUnit()
+                                               ? temperatureSensor.readTemperature()
+                                               : temperatureSensor.readTemperatureF();
     }
+    regulateTemperature();
 }
 
 TemperatureStatus TemperatureController::getStatus() const
@@ -62,18 +66,6 @@ const tImage &TemperatureController::getModeIcon() const
 const tImage &TemperatureController::getMotorStateIcon() const
 {
     return (currentStatus.motorState == MotorState::Open) ? windFlow : noWindFlow;
-}
-
-void TemperatureController::updateTemperature()
-{
-    if (settings.getTemperatureUnit())
-    {
-        currentStatus.currentTemperature = temperatureSensor.readTemperature();
-    }
-    else
-    {
-        currentStatus.currentTemperature = temperatureSensor.readTemperatureF();
-    }
 }
 
 void TemperatureController::regulateTemperature()

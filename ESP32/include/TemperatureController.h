@@ -23,7 +23,7 @@ public:
 
 private:
     static constexpr float TEMPERATURE_THRESHOLD = 0.5f;
-    static constexpr unsigned long UPDATE_INTERVAL = 2000; // ms
+    static constexpr unsigned long UPDATE_INTERVAL = 5000; // ms
 
     TemperatureSensor &temperatureSensor;
     Settings &settings;

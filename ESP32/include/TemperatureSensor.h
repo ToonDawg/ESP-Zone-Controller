@@ -1,14 +1,17 @@
 #ifndef TEMPERATURE_SENSOR_H
 #define TEMPERATURE_SENSOR_H
 
-class TemperatureSensor {
+class TemperatureSensor
+{
 public:
     virtual void begin() = 0;
     virtual float readTemperature() = 0;
     virtual float readTemperatureF() = 0;
     virtual void setTemperatureOffset(float offset) = 0;
+    virtual bool isReady() const;
+    virtual void update();
 
-    virtual ~TemperatureSensor() = default; 
+    virtual ~TemperatureSensor() = default;
 };
 
 #endif // TEMPERATURE_SENSOR_H

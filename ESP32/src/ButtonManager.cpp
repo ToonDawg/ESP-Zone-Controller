@@ -109,8 +109,10 @@ void ButtonManager::handleIncreaseInCurrentState()
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
         tempController.adjustCalibrationTemperature(0.5);
         break;
+    case AppStateManager::AppState::SET_TEMPERATURE:
+        tempController.adjustSetTemperature(0.5);
+        break;
     default:
-        tempController.adjustTemperature(0.5);
         appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
         appStateManager.recordAdjustmentTime();
     }
@@ -130,8 +132,10 @@ void ButtonManager::handleDecreaseInCurrentState()
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
         tempController.adjustCalibrationTemperature(-0.5);
         break;
+    case AppStateManager::AppState::SET_TEMPERATURE:
+        tempController.adjustSetTemperature(-0.5);
+        break;
     default:
-        tempController.adjustTemperature(-0.5);
         appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
         appStateManager.recordAdjustmentTime();
     }
@@ -184,7 +188,7 @@ void ButtonManager::handleIncreaseLongPressInCurrentState()
         static unsigned long lastChangeTime = 0;
         if (millis() - lastChangeTime > 200)
         {
-            tempController.adjustTemperature(0.5);
+            tempController.adjustSetTemperature(0.5);
             appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
             appStateManager.recordAdjustmentTime();
             lastChangeTime = millis();
@@ -201,7 +205,7 @@ void ButtonManager::handleDecreaseLongPressInCurrentState()
         static unsigned long lastChangeTime = 0;
         if (millis() - lastChangeTime > 200)
         {
-            tempController.adjustTemperature(-0.5);
+            tempController.adjustSetTemperature(-0.5);
             appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
             appStateManager.recordAdjustmentTime();
             lastChangeTime = millis();

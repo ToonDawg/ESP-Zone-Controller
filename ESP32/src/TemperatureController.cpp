@@ -34,7 +34,7 @@ TemperatureStatus TemperatureController::getStatus() const
     return currentStatus;
 }
 
-void TemperatureController::adjustTemperature(float delta)
+void TemperatureController::adjustSetTemperature(float delta)
 {
     currentStatus.setTemperature += delta;
     settings.setSetTemperature(currentStatus.setTemperature);

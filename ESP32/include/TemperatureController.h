@@ -13,7 +13,7 @@ public:
     void update();
     TemperatureStatus getStatus() const;
 
-    void adjustTemperature(float delta);
+    void adjustSetTemperature(float delta);
     void adjustCalibrationTemperature(float delta);
     void toggleMode();
     void toggleMotorState();

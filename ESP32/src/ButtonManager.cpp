@@ -97,6 +97,7 @@ void ButtonManager::handleDecreaseLongPress()
 
 void ButtonManager::handleIncreaseInCurrentState()
 {
+    appStateManager.resetSleepTimer();
     AppStateManager::AppState currentState = appStateManager.getAppState();
     switch (currentState)
     {
@@ -104,6 +105,7 @@ void ButtonManager::handleIncreaseInCurrentState()
     case AppStateManager::AppState::MOTOR_DIRECTION:
     case AppStateManager::AppState::TEMPERATURE_UNIT:
     case AppStateManager::AppState::ABOUT:
+    case AppStateManager::AppState::AUTO_SLEEP:
         appStateManager.menuNavigateUp();
         break;
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
@@ -111,6 +113,7 @@ void ButtonManager::handleIncreaseInCurrentState()
         break;
     case AppStateManager::AppState::SET_TEMPERATURE:
         tempController.adjustSetTemperature(0.5);
+        appStateManager.recordAdjustmentTime();
         break;
     default:
         appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
@@ -120,6 +123,8 @@ void ButtonManager::handleIncreaseInCurrentState()
 
 void ButtonManager::handleDecreaseInCurrentState()
 {
+    appStateManager.resetSleepTimer();
+
     AppStateManager::AppState currentState = appStateManager.getAppState();
     switch (currentState)
     {
@@ -127,6 +132,7 @@ void ButtonManager::handleDecreaseInCurrentState()
     case AppStateManager::AppState::MOTOR_DIRECTION:
     case AppStateManager::AppState::TEMPERATURE_UNIT:
     case AppStateManager::AppState::ABOUT:
+    case AppStateManager::AppState::AUTO_SLEEP:
         appStateManager.menuNavigateDown();
         break;
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
@@ -134,6 +140,7 @@ void ButtonManager::handleDecreaseInCurrentState()
         break;
     case AppStateManager::AppState::SET_TEMPERATURE:
         tempController.adjustSetTemperature(-0.5);
+        appStateManager.recordAdjustmentTime();
         break;
     default:
         appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
@@ -143,6 +150,7 @@ void ButtonManager::handleDecreaseInCurrentState()
 
 void ButtonManager::handleButtonAInCurrentState()
 {
+    appStateManager.resetSleepTimer();
     AppStateManager::AppState currentState = appStateManager.getAppState();
     switch (currentState)
     {
@@ -150,6 +158,7 @@ void ButtonManager::handleButtonAInCurrentState()
     case AppStateManager::AppState::MOTOR_DIRECTION:
     case AppStateManager::AppState::TEMPERATURE_UNIT:
     case AppStateManager::AppState::ABOUT:
+    case AppStateManager::AppState::AUTO_SLEEP:
         appStateManager.selectMenuItem();
         break;
     case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
@@ -168,6 +177,7 @@ void ButtonManager::handleButtonAInCurrentState()
 
 void ButtonManager::handleButtonBInCurrentState()
 {
+    appStateManager.resetSleepTimer();
     AppStateManager::AppState currentState = appStateManager.getAppState();
     switch (currentState)
     {
@@ -181,6 +191,7 @@ void ButtonManager::handleButtonBInCurrentState()
 
 void ButtonManager::handleIncreaseLongPressInCurrentState()
 {
+    appStateManager.resetSleepTimer();
     AppStateManager::AppState currentState = appStateManager.getAppState();
     if (currentState == AppStateManager::AppState::CURRENT_TEMPERATURE ||
         currentState == AppStateManager::AppState::SET_TEMPERATURE)
@@ -198,6 +209,7 @@ void ButtonManager::handleIncreaseLongPressInCurrentState()
 
 void ButtonManager::handleDecreaseLongPressInCurrentState()
 {
+    appStateManager.resetSleepTimer();
     AppStateManager::AppState currentState = appStateManager.getAppState();
     if (currentState == AppStateManager::AppState::CURRENT_TEMPERATURE ||
         currentState == AppStateManager::AppState::SET_TEMPERATURE)

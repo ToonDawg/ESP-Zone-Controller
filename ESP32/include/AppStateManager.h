@@ -53,7 +53,7 @@ private:
     Settings &settings;
     unsigned long lastAdjustmentTime;
     unsigned long lastActivityTime;
-    static const unsigned long SLEEP_TIMEOUT = 3000;
+    static const unsigned long SLEEP_TIMEOUT = 10000;
 
     Menu settingsMenu;
     Menu motorDirectionMenu;

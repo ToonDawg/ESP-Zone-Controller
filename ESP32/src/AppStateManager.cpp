@@ -106,6 +106,10 @@ void AppStateManager::menuNavigateUp()
     {
         aboutMenu.navigateUp();
     }
+    else if (currentState == AppState::AUTO_SLEEP)
+    {
+        aboutMenu.navigateUp();
+    }
     display();
 }
 
@@ -127,6 +131,10 @@ void AppStateManager::menuNavigateDown()
     {
         aboutMenu.navigateDown();
     }
+    else if (currentState == AppState::AUTO_SLEEP)
+    {
+        aboutMenu.navigateDown();
+    }
     display();
 }
 
@@ -145,6 +153,9 @@ void AppStateManager::selectMenuItem()
             break;
         case 2:
             setAppState(AppState::TEMPERATURE_UNIT);
+            break;
+        case 3:
+            setAppState(AppState::AUTO_SLEEP);
             break;
         case 4:
             setAppState(AppState::ABOUT);

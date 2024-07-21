@@ -70,3 +70,11 @@ void Settings::setLatestAvailableVersion(const String& version) {
 String Settings::getLatestAvailableVersion() {
     return preferences.getString("latest_ver", "");
 }
+
+void Settings::setAutoSleep(bool enabled) {
+    preferences.putBool("auto_sleep", enabled);
+}
+
+bool Settings::getAutoSleep() {
+    return preferences.getBool("auto_sleep", false);
+}

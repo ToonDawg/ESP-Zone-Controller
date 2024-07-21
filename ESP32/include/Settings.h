@@ -22,6 +22,9 @@ public:
     void setTemperatureCalibration(float calibration);
     float getTemperatureCalibration();
 
+    void setAutoSleep(bool enabled);
+    bool getAutoSleep();
+
     void setCurrentSoftwareVersion(String version);
     String getCurrentSoftwareVersion();
 

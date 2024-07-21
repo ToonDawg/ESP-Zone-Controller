@@ -10,10 +10,12 @@ AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureCont
       settings(settings),
       updater(updater),
       lastAdjustmentTime(0),
-      settingsMenu("Settings", {"Temp. Calibration", "Motor Direction", "Temp. Unit", "About"}),
+      lastActivityTime(0),
+      settingsMenu("Settings", {"Temp. Calibration", "Motor Direction", "Temp. Unit", "Auto Sleep", "About"}),
       motorDirectionMenu("Motor Direction", {"Normal", "Reversed"}),
       tempUnitMenu("Temp. Unit", {"Celsius", "Fahrenheit"}),
-      aboutMenu("About", {"Check for Updates", "Device Details", "Update"})
+      aboutMenu("About", {"Check for Updates", "Device Details", "Update"}),
+      autoSleepMenu("Auto Sleep", {"On", "Off"})
 {
 }
 
@@ -68,13 +70,17 @@ void AppStateManager::display()
     case AppState::UPDATING:
         displayUpdating();
         break;
+    case AppState::AUTO_SLEEP:
+        displayAutoSleepSetting();
+        break;
     }
     displayManager.render();
 }
 
 void AppStateManager::tick()
 {
-    handleStateTimeouts();
+    handleSetTemperatureTimeout();
+    checkAutoSleep();
 }
 
 void AppStateManager::recordAdjustmentTime()
@@ -140,12 +146,11 @@ void AppStateManager::selectMenuItem()
         case 2:
             setAppState(AppState::TEMPERATURE_UNIT);
             break;
-        case 3:
+        case 4:
             setAppState(AppState::ABOUT);
             break;
         }
         break;
-
     case AppState::MOTOR_DIRECTION:
         switch (motorDirectionMenu.getSelectedIndex())
         {
@@ -197,6 +202,22 @@ void AppStateManager::selectMenuItem()
             break;
         }
         break;
+
+    case AppState::AUTO_SLEEP:
+        switch (autoSleepMenu.getSelectedIndex())
+        {
+        case 0:
+            settings.setAutoSleep(true);
+            setAppState(AppState::CURRENT_TEMPERATURE);
+            break;
+        case 1:
+            settings.setAutoSleep(false);
+            setAppState(AppState::CURRENT_TEMPERATURE);
+            break;
+        default:
+            setAppState(AppState::CURRENT_TEMPERATURE);
+            break;
+        }
 
     default:
         break;
@@ -297,7 +318,7 @@ void AppStateManager::displayWiFiProvisioning()
     displayManager.displaySettingsMenu(aboutMenu);
 }
 
-void AppStateManager::handleStateTimeouts()
+void AppStateManager::handleSetTemperatureTimeout()
 {
     unsigned long currentTime = millis();
 
@@ -342,4 +363,26 @@ void AppStateManager::displayDeviceDetails()
 void AppStateManager::displayUpdating()
 {
     displayManager.displayCenteredWrappedText("Updating...");
+}
+
+void AppStateManager::displayAutoSleepSetting()
+{
+    bool autoSleepEnabled = settings.getAutoSleep();
+    autoSleepMenu.setActiveIndex(autoSleepEnabled ? 0 : 1);
+    displayManager.displaySettingsMenu(autoSleepMenu);
+}
+
+void AppStateManager::checkAutoSleep()
+{
+    if (settings.getAutoSleep() &&
+        currentState != AppState::OFF &&
+        millis() - lastActivityTime > SLEEP_TIMEOUT)
+    {
+        setAppState(AppState::OFF);
+    }
+}
+
+void AppStateManager::resetSleepTimer()
+{
+    lastActivityTime = millis();
 }

@@ -16,6 +16,7 @@ public:
         OFF,
         SETTINGS,
         WIFI_PROVISIONING,
+        AUTO_SLEEP,
         MOTOR_DIRECTION,
         TEMPERATURE_CALIBRATION,
         TEMPERATURE_UNIT,
@@ -42,6 +43,8 @@ public:
     void menuNavigateUp();
     void menuNavigateDown();
     void selectMenuItem();
+    void checkAutoSleep();
+    void resetSleepTimer();
 
 private:
     AppState currentState;
@@ -49,11 +52,14 @@ private:
     TemperatureController &temperatureController;
     Settings &settings;
     unsigned long lastAdjustmentTime;
+    unsigned long lastActivityTime;
+    static const unsigned long SLEEP_TIMEOUT = 3000;
 
     Menu settingsMenu;
     Menu motorDirectionMenu;
     Menu tempUnitMenu;
     Menu aboutMenu;
+    Menu autoSleepMenu;
 
     OTAUpdater &updater;
 
@@ -68,10 +74,9 @@ private:
     void displayCheckForUpdates();
     void displayUpdate();
     void displayDeviceDetails();
+    void displayAutoSleepSetting();
     void updateLatestVersionInSettings(const String &version);
-    void handleStateTimeouts();
+    void handleSetTemperatureTimeout();
     void displayUpdating();
     bool shouldCheckForUpdates();
-    
-
 };

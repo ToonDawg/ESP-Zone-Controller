@@ -211,7 +211,7 @@ void DisplayManager::displaySettingsMenu(const Menu &menu)
     const int maxVisibleItems = 2;
 
     int selectedIndex = menu.getSelectedIndex();
-    int numItems = menu.getNumItems();
+    int numItems = menu.getItems().size();
     int startIdx = std::max(0, std::min(selectedIndex - 1, numItems - maxVisibleItems));
 
     int16_t startY = titleHeight;
@@ -221,8 +221,7 @@ void DisplayManager::displaySettingsMenu(const Menu &menu)
     {
         int itemIndex = startIdx + i;
         int16_t itemY = startY + i * (itemHeight + itemSpacing);
-
-        displayMenuItem(menu.getItems()[itemIndex], itemIndex == selectedIndex, itemIndex == menu.getActiveIndex(), itemY, verticalOffset, textHeight);
+        displayMenuItem(menu.getItems()[itemIndex].getName(), itemIndex == selectedIndex, itemIndex == menu.getSelectedIndex(), itemY, verticalOffset, textHeight);
     }
 
     // Draw scroll indicators

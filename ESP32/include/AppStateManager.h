@@ -26,7 +26,14 @@ public:
     AppState getAppState() const;
     void display();
     void tick();
-    void handleInput(int input);
+    enum class ButtonInput {
+        UP,
+        DOWN,
+        SELECT,
+        BACK
+    };
+
+    void handleInput(ButtonInput input);
     void resetSleepTimer();
 
 private:

@@ -94,7 +94,6 @@ void ButtonManager::handleIncreaseButtonEvents()
         appStateManager.handleInput(AppStateManager::ButtonInput::UP);
         break;
     default:
-        appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
         break;
     }
 }
@@ -110,7 +109,6 @@ void ButtonManager::handleDecreaseButtonEvents()
         appStateManager.handleInput(AppStateManager::ButtonInput::DOWN);
         break;
     default:
-        appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
         break;
     }
 }

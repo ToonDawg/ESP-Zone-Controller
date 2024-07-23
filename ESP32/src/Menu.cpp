@@ -12,3 +12,7 @@ void Menu::navigateDown() {
         selectedIndex = (selectedIndex + 1) % items.size();
     }
 }
+
+void Menu::addItem(const String &item) {
+    items.push_back(item);
+}

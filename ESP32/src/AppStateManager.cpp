@@ -3,26 +3,39 @@
 #include "AppStateManager.h"
 #include "Settings.h"
 
+const std::vector<std::pair<String, unsigned long>> AppStateManager::AUTO_SLEEP_OPTIONS = {
+    {"Off", 0},
+    {"10s", 10000},
+    {"30s", 30000},
+    {"1min", 60000},
+    {"2min", 120000},
+    {"5min", 300000}};
+
 AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater)
     : currentState(AppState::CURRENT_TEMPERATURE),
       displayManager(displayManager),
       temperatureController(tempController),
       settings(settings),
       updater(updater),
-      lastAdjustmentTime(0),
+      lastSetTempAdjustmentTime(0),
       lastActivityTime(0),
       settingsMenu("Settings", {"Temp. Calibration", "Motor Direction", "Temp. Unit", "Auto Sleep", "About"}),
       motorDirectionMenu("Motor Direction", {"Normal", "Reversed"}),
       tempUnitMenu("Temp. Unit", {"Celsius", "Fahrenheit"}),
       aboutMenu("About", {"Check for Updates", "Device Details", "Update"}),
-      autoSleepMenu("Auto Sleep", {"On", "Off"})
+      autoSleepMenu("Auto Sleep", {})
 {
+    for (const auto &option : AUTO_SLEEP_OPTIONS)
+    {
+        autoSleepMenu.addItem(option.first);
+    }
+    autoSleepMenu.setSelectedIndex(settings.getAutoSleepOption());
 }
 
 void AppStateManager::setAppState(AppState state)
 {
     currentState = state;
-    lastAdjustmentTime = millis();
+    lastSetTempAdjustmentTime = millis();
 }
 
 AppStateManager::AppState AppStateManager::getAppState() const
@@ -85,7 +98,7 @@ void AppStateManager::tick()
 
 void AppStateManager::recordAdjustmentTime()
 {
-    lastAdjustmentTime = millis();
+    lastSetTempAdjustmentTime = millis();
 }
 
 void AppStateManager::menuNavigateUp()
@@ -108,7 +121,7 @@ void AppStateManager::menuNavigateUp()
     }
     else if (currentState == AppState::AUTO_SLEEP)
     {
-        aboutMenu.navigateUp();
+        autoSleepMenu.navigateUp();
     }
     display();
 }
@@ -133,7 +146,7 @@ void AppStateManager::menuNavigateDown()
     }
     else if (currentState == AppState::AUTO_SLEEP)
     {
-        aboutMenu.navigateDown();
+        autoSleepMenu.navigateDown();
     }
     display();
 }
@@ -215,22 +228,14 @@ void AppStateManager::selectMenuItem()
         break;
 
     case AppState::AUTO_SLEEP:
-        switch (autoSleepMenu.getSelectedIndex())
+        int selectedIndex = autoSleepMenu.getSelectedIndex();
+        if (selectedIndex >= 0 && selectedIndex < AUTO_SLEEP_OPTIONS.size())
         {
-        case 0:
-            settings.setAutoSleep(true);
-            setAppState(AppState::CURRENT_TEMPERATURE);
-            break;
-        case 1:
-            settings.setAutoSleep(false);
-            setAppState(AppState::CURRENT_TEMPERATURE);
-            break;
-        default:
-            setAppState(AppState::CURRENT_TEMPERATURE);
-            break;
+            settings.setAutoSleepOption(selectedIndex);
+            Serial.print("Auto Sleep set to: ");
+            Serial.println(AUTO_SLEEP_OPTIONS[selectedIndex].first);
         }
-
-    default:
+        setAppState(AppState::SETTINGS);
         break;
     }
 }
@@ -333,7 +338,7 @@ void AppStateManager::handleSetTemperatureTimeout()
 {
     unsigned long currentTime = millis();
 
-    if (currentState == AppState::SET_TEMPERATURE && currentTime - lastAdjustmentTime > 3000)
+    if (currentState == AppState::SET_TEMPERATURE && currentTime - lastSetTempAdjustmentTime > 3000)
     {
         setAppState(AppState::CURRENT_TEMPERATURE);
     }
@@ -378,22 +383,30 @@ void AppStateManager::displayUpdating()
 
 void AppStateManager::displayAutoSleepSetting()
 {
-    bool autoSleepEnabled = settings.getAutoSleep();
-    autoSleepMenu.setActiveIndex(autoSleepEnabled ? 0 : 1);
     displayManager.displaySettingsMenu(autoSleepMenu);
 }
 
 void AppStateManager::checkAutoSleep()
 {
-    if (settings.getAutoSleep() &&
-        currentState != AppState::OFF &&
-        millis() - lastActivityTime > SLEEP_TIMEOUT)
+    int optionIndex = settings.getAutoSleepOption();
+    if (optionIndex > 0 && optionIndex < AUTO_SLEEP_OPTIONS.size())
     {
-        setAppState(AppState::OFF);
+        unsigned long sleepTimeout = AUTO_SLEEP_OPTIONS[optionIndex].second;
+        if (currentState != AppState::OFF && millis() - lastActivityTime > sleepTimeout)
+        {
+            setAppState(AppState::OFF);
+        }
     }
 }
 
 void AppStateManager::resetSleepTimer()
 {
     lastActivityTime = millis();
+}
+
+void AppStateManager::selectAutoSleepOption()
+{
+    int selectedIndex = autoSleepMenu.getSelectedIndex();
+    settings.setAutoSleepOption(selectedIndex);
+    setAppState(AppState::SETTINGS);
 }

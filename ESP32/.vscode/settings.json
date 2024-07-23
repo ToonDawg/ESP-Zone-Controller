@@ -49,7 +49,8 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "icons.h": "c"
+        "icons.h": "c",
+        "set": "cpp"
     },
     "cmake.sourceDirectory": "C:/Users/242401/Documents/Source/ESP-Zone-Controller/.pio/libdeps/esp32dev/Adafruit BusIO"
 }

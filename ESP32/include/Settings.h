@@ -22,18 +22,18 @@ public:
     void setTemperatureCalibration(float calibration);
     float getTemperatureCalibration();
 
-    void setAutoSleep(bool enabled);
-    bool getAutoSleep();
+    void setAutoSleepOption(int option);
+    int getAutoSleepOption();
 
     void setCurrentSoftwareVersion(String version);
     String getCurrentSoftwareVersion();
 
     void updateAllSettings(bool isCelsius, bool isNormal, float calibration);
-    
+
     void setLastUpdateCheck(unsigned long time);
     unsigned long getLastUpdateCheck();
 
-    void setLatestAvailableVersion(const String& version);
+    void setLatestAvailableVersion(const String &version);
     String getLatestAvailableVersion();
 
 private:

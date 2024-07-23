@@ -17,6 +17,7 @@ public:
     int getActiveIndex() const { return activeIndex; }
     void navigateUp();
     void navigateDown();
+    void addItem(const String &item);
 
 private:
     String title;

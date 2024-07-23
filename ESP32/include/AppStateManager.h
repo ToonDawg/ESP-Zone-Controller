@@ -45,15 +45,17 @@ public:
     void selectMenuItem();
     void checkAutoSleep();
     void resetSleepTimer();
+    void selectAutoSleepOption();
 
 private:
     AppState currentState;
     DisplayManager &displayManager;
     TemperatureController &temperatureController;
     Settings &settings;
-    unsigned long lastAdjustmentTime;
+    unsigned long lastSetTempAdjustmentTime;
     unsigned long lastActivityTime;
     static const unsigned long SLEEP_TIMEOUT = 10000;
+    static const std::vector<std::pair<String, unsigned long>> AUTO_SLEEP_OPTIONS;
 
     Menu settingsMenu;
     Menu motorDirectionMenu;

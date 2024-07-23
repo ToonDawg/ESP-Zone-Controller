@@ -71,10 +71,10 @@ String Settings::getLatestAvailableVersion() {
     return preferences.getString("latest_ver", "");
 }
 
-void Settings::setAutoSleep(bool enabled) {
-    preferences.putBool("auto_sleep", enabled);
+void Settings::setAutoSleepOption(int option) {
+    preferences.putInt("auto_sleep", option);
 }
 
-bool Settings::getAutoSleep() {
-    return preferences.getBool("auto_sleep", false);
+int Settings::getAutoSleepOption() {
+    return preferences.getInt("auto_sleep", 0); // Default to 0 (Off)
 }

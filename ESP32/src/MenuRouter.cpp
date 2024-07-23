@@ -71,6 +71,10 @@ Menu* MenuRouter::getCurrentMenu() const {
     return m_currentMenu;
 }
 
+bool MenuRouter::isAtRootMenu() const {
+    return m_currentMenu == m_rootMenu;
+}
+
 Menu* MenuRouter::findMenu(const String& menuId) const {
     auto it = m_menuMap.find(menuId);
     return (it != m_menuMap.end()) ? it->second : nullptr;

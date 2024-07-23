@@ -1,27 +1,28 @@
 // Menu.h
 #pragma once
+
 #include <Arduino.h>
 #include <vector>
+#include "MenuItem.h"
 
 class Menu {
 public:
-    Menu(const String& title, const std::vector<String>& items)
-        : title(title), items(items), selectedIndex(0), activeIndex(-1) {}
-
-    const String& getTitle() const { return title; }
-    const std::vector<String>& getItems() const { return items; }
-    int getSelectedIndex() const { return selectedIndex; }
-    void setSelectedIndex(int index) { selectedIndex = index; }
-    int getNumItems() const { return items.size(); }
-    void setActiveIndex(int index) { activeIndex = index; }
-    int getActiveIndex() const { return activeIndex; }
+    Menu(const String& title);
+    
+    void addItem(const MenuItem& item);
+    void removeItem(int index);
+    const String& getTitle() const;
+    const std::vector<MenuItem>& getItems() const;
+    int getSelectedIndex() const;
+    void setSelectedIndex(int index);
+    Menu* getParentMenu() const;
+    void setParentMenu(Menu* parent);
     void navigateUp();
     void navigateDown();
-    void addItem(const String &item);
 
 private:
-    String title;
-    std::vector<String> items;
-    int selectedIndex;
-    int activeIndex;
+    String m_title;
+    std::vector<MenuItem> m_items;
+    int m_selectedIndex;
+    Menu* m_parentMenu;
 };

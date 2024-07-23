@@ -1,21 +1,19 @@
+// ButtonManager.h
 #pragma once
-
 
 #include <OneButton.h>
 #include "TemperatureController.h"
 #include "AppStateManager.h"
-#include "OTAUpdater.h"
 
 class ButtonManager {
 public:
-    ButtonManager(TemperatureController& tempController, AppStateManager& appStateManager, OTAUpdater& updater);
+    ButtonManager(TemperatureController& tempController, AppStateManager& appStateManager);
     void setupButtons();
     void tick();
 
 private:
     TemperatureController& tempController;
     AppStateManager& appStateManager;
-    OTAUpdater& updater;
     OneButton increaseButton;
     OneButton decreaseButton;
     OneButton buttonA;
@@ -29,18 +27,14 @@ private:
     static void handleButtonBClick();
 
     static void handleIncreaseLongPressStart();
-    static void handleALongPressStart();
-    static void handleBLongPressStart();
     static void handleDecreaseLongPressStart();
     static void handleIncreaseLongPress();
     static void handleDecreaseLongPress();
 
-    void handleIncreaseInCurrentState();
-    void handleDecreaseInCurrentState();
-    void handleButtonAInCurrentState();
-    void handleButtonBInCurrentState();
-    void handleIncreaseLongPressInCurrentState();
-    void handleDecreaseLongPressInCurrentState();
+    void handleIncreaseButtonEvents();
+    void handleDecreaseButtonEvents();
+    void handleButtonAEvents();
+    void handleButtonBEvents();
 
     static constexpr unsigned int INCREASE_BUTTON_PIN = 4;
     static constexpr unsigned int DECREASE_BUTTON_PIN = 7;

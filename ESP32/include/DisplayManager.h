@@ -53,6 +53,8 @@ public:
     void showLoader();
     void showLoaderWithText(const String &text);
     void displayLabelAndContent(const String &label, const String &content, int16_t y);
+    void displayMenuItem(const String &item, bool selected, bool active, int16_t y, int16_t verticalOffset, int16_t textHeight);
+
 
 private:
     Adafruit_SH1106G &display;
@@ -67,7 +69,6 @@ private:
     void draw8BitImage(int16_t x, int16_t y, const tImage &image);
 
     String cutoffText(const String &text, int16_t maxWidth);
-    void displayMenuItem(const String &item, bool selected, bool active, int16_t y, int16_t verticalOffset, int16_t textHeight);
 
     static constexpr int16_t DISPLAY_SIDE_MARGIN = 4;
     static constexpr int16_t TEMPERATURE_FONT_HEIGHT = 35;

@@ -8,3 +8,4 @@ ESP32/include/iot_configs.h
 Acclimate/node_modules
 Acclimate/android
 ESP32/repo.md
+.aider*

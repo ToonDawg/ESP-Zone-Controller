@@ -6,6 +6,7 @@
 #include "Settings.h"
 #include "OTAUpdater.h"
 #include "DS18B20Sensor.h"
+#include "MenuRouter.h"
 
 // Use PROGMEM for constant strings
 const char PROGMEM SSID[] = "Asus";
@@ -41,6 +42,7 @@ TemperatureController *tempController = nullptr;
 DisplayManager *displayManager = nullptr;
 AppStateManager *appStateManager = nullptr;
 ButtonManager *buttonManager = nullptr;
+MenuRouter *menuRouter = nullptr;
 
 TwoWire i2cBus(0);
 Settings settings;
@@ -77,9 +79,10 @@ void setup()
   displayManager = new DisplayManager(display);
 
   updater = new OTAUpdater(UPDATE_URL, DEVICE_NAME, settings);
-  appStateManager = new AppStateManager(*displayManager, *tempController, settings, *updater);
+  menuRouter = new MenuRouter();
+  appStateManager = new AppStateManager(*displayManager, *tempController, settings, *updater, *menuRouter);
 
-  buttonManager = new ButtonManager(*tempController, *appStateManager, *updater);
+  buttonManager = new ButtonManager(*tempController, *appStateManager);
   buttonManager->setupButtons();
 
   Serial.println(F("Initialization complete."));

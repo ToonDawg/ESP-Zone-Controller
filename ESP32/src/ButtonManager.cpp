@@ -1,9 +1,10 @@
+// ButtonManager.cpp
 #include "ButtonManager.h"
 
-ButtonManager *ButtonManager::instance = nullptr;
+ButtonManager* ButtonManager::instance = nullptr;
 
-ButtonManager::ButtonManager(TemperatureController &tempController, AppStateManager &appStateManager, OTAUpdater &updater)
-    : tempController(tempController), appStateManager(appStateManager), updater(updater),
+ButtonManager::ButtonManager(TemperatureController& tempController, AppStateManager& appStateManager)
+    : tempController(tempController), appStateManager(appStateManager),
       increaseButton(INCREASE_BUTTON_PIN, true),
       decreaseButton(DECREASE_BUTTON_PIN, true),
       buttonA(BUTTON_A_PIN, true),
@@ -19,9 +20,6 @@ void ButtonManager::setupButtons()
     buttonA.attachClick(handleButtonAClick);
     buttonB.attachClick(handleButtonBClick);
 
-    buttonA.attachLongPressStart(handleALongPressStart);
-    buttonB.attachLongPressStart(handleDecreaseLongPressStart);
-
     increaseButton.attachLongPressStart(handleIncreaseLongPressStart);
     decreaseButton.attachLongPressStart(handleDecreaseLongPressStart);
     increaseButton.attachDuringLongPress(handleIncreaseLongPress);
@@ -36,191 +34,89 @@ void ButtonManager::tick()
     buttonB.tick();
 }
 
-void ButtonManager::handleIncreaseClick()
-{
-    if (instance)
-        instance->handleIncreaseInCurrentState();
-}
+void ButtonManager::handleIncreaseClick() { if (instance) instance->handleIncreaseButtonEvents(); }
+void ButtonManager::handleDecreaseClick() { if (instance) instance->handleDecreaseButtonEvents(); }
+void ButtonManager::handleButtonAClick() { if (instance) instance->handleButtonAEvents(); }
+void ButtonManager::handleButtonBClick() { if (instance) instance->handleButtonBEvents(); }
 
-void ButtonManager::handleDecreaseClick()
-{
-    if (instance)
-        instance->handleDecreaseInCurrentState();
-}
+void ButtonManager::handleIncreaseLongPressStart() { if (instance) instance->handleIncreaseButtonEvents(); }
+void ButtonManager::handleDecreaseLongPressStart() { if (instance) instance->handleDecreaseButtonEvents(); }
+void ButtonManager::handleIncreaseLongPress() { if (instance) instance->handleIncreaseButtonEvents(); }
+void ButtonManager::handleDecreaseLongPress() { if (instance) instance->handleDecreaseButtonEvents(); }
 
-void ButtonManager::handleButtonAClick()
+void ButtonManager::handleIncreaseButtonEvents()
 {
-    if (instance)
-        instance->handleButtonAInCurrentState();
-}
-
-void ButtonManager::handleButtonBClick()
-{
-    if (instance)
-        instance->handleButtonBInCurrentState();
-}
-
-void ButtonManager::handleIncreaseLongPressStart()
-{
-    if (instance)
-        instance->handleIncreaseLongPressInCurrentState();
-}
-
-void ButtonManager::handleALongPressStart()
-{
-    if (instance)
-        instance->appStateManager.setAppState(AppStateManager::AppState::SETTINGS);
-}
-void ButtonManager::handleBLongPressStart()
-{
-    if (instance)
-        instance->handleIncreaseLongPressInCurrentState();
-}
-
-void ButtonManager::handleDecreaseLongPressStart()
-{
-    if (instance)
-        instance->handleDecreaseLongPressInCurrentState();
-}
-
-void ButtonManager::handleIncreaseLongPress()
-{
-    if (instance)
-        instance->handleIncreaseLongPressInCurrentState();
-}
-
-void ButtonManager::handleDecreaseLongPress()
-{
-    if (instance)
-        instance->handleDecreaseLongPressInCurrentState();
-}
-
-void ButtonManager::handleIncreaseInCurrentState()
-{
-    appStateManager.resetSleepTimer();
-    AppStateManager::AppState currentState = appStateManager.getAppState();
-    switch (currentState)
+    switch (appStateManager.getAppState())
     {
-    case AppStateManager::AppState::SETTINGS:
-    case AppStateManager::AppState::MOTOR_DIRECTION:
-    case AppStateManager::AppState::TEMPERATURE_UNIT:
-    case AppStateManager::AppState::ABOUT:
-    case AppStateManager::AppState::AUTO_SLEEP:
-        appStateManager.menuNavigateUp();
-        break;
-    case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
-        tempController.adjustCalibrationTemperature(0.5);
-        break;
-    case AppStateManager::AppState::SET_TEMPERATURE:
-        tempController.adjustSetTemperature(0.5);
-        appStateManager.recordAdjustmentTime();
-        break;
-    default:
-        appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
-        appStateManager.recordAdjustmentTime();
-    }
-}
-
-void ButtonManager::handleDecreaseInCurrentState()
-{
-    appStateManager.resetSleepTimer();
-
-    AppStateManager::AppState currentState = appStateManager.getAppState();
-    switch (currentState)
-    {
-    case AppStateManager::AppState::SETTINGS:
-    case AppStateManager::AppState::MOTOR_DIRECTION:
-    case AppStateManager::AppState::TEMPERATURE_UNIT:
-    case AppStateManager::AppState::ABOUT:
-    case AppStateManager::AppState::AUTO_SLEEP:
-        appStateManager.menuNavigateDown();
-        break;
-    case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
-        tempController.adjustCalibrationTemperature(-0.5);
-        break;
-    case AppStateManager::AppState::SET_TEMPERATURE:
-        tempController.adjustSetTemperature(-0.5);
-        appStateManager.recordAdjustmentTime();
-        break;
-    default:
-        appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
-        appStateManager.recordAdjustmentTime();
-    }
-}
-
-void ButtonManager::handleButtonAInCurrentState()
-{
-    appStateManager.resetSleepTimer();
-    AppStateManager::AppState currentState = appStateManager.getAppState();
-    switch (currentState)
-    {
-    case AppStateManager::AppState::SETTINGS:
-    case AppStateManager::AppState::MOTOR_DIRECTION:
-    case AppStateManager::AppState::TEMPERATURE_UNIT:
-    case AppStateManager::AppState::ABOUT:
-    case AppStateManager::AppState::AUTO_SLEEP:
-        appStateManager.selectMenuItem();
-        break;
-    case AppStateManager::AppState::TEMPERATURE_CALIBRATION:
-        appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
-        break;
-    case AppStateManager::AppState::UPDATE:
-        appStateManager.setAppState(AppStateManager::AppState::UPDATING);
-        updater.performUpdate();
-        break;
-    default:
-        appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
-        tempController.toggleMode();
-        break;
-    }
-}
-
-void ButtonManager::handleButtonBInCurrentState()
-{
-    appStateManager.resetSleepTimer();
-    AppStateManager::AppState currentState = appStateManager.getAppState();
-    switch (currentState)
-    {
-    case AppStateManager::AppState::CURRENT_TEMPERATURE:
-        appStateManager.setAppState(AppStateManager::AppState::OFF);
-        break;
-    default:
-        appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
-    }
-}
-
-void ButtonManager::handleIncreaseLongPressInCurrentState()
-{
-    appStateManager.resetSleepTimer();
-    AppStateManager::AppState currentState = appStateManager.getAppState();
-    if (currentState == AppStateManager::AppState::CURRENT_TEMPERATURE ||
-        currentState == AppStateManager::AppState::SET_TEMPERATURE)
-    {
-        static unsigned long lastChangeTime = 0;
-        if (millis() - lastChangeTime > 200)
-        {
+        case AppStateManager::AppState::CURRENT_TEMPERATURE:
+            appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
             tempController.adjustSetTemperature(0.5);
-            appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
-            appStateManager.recordAdjustmentTime();
-            lastChangeTime = millis();
-        }
+            break;
+        case AppStateManager::AppState::SET_TEMPERATURE:
+            tempController.adjustSetTemperature(0.5);
+            break;
+        case AppStateManager::AppState::MENU:
+            appStateManager.handleInput(1); // Up
+            break;
+        default:
+            break;
     }
 }
 
-void ButtonManager::handleDecreaseLongPressInCurrentState()
+void ButtonManager::handleDecreaseButtonEvents()
 {
-    appStateManager.resetSleepTimer();
-    AppStateManager::AppState currentState = appStateManager.getAppState();
-    if (currentState == AppStateManager::AppState::CURRENT_TEMPERATURE ||
-        currentState == AppStateManager::AppState::SET_TEMPERATURE)
+    switch (appStateManager.getAppState())
     {
-        static unsigned long lastChangeTime = 0;
-        if (millis() - lastChangeTime > 200)
-        {
-            tempController.adjustSetTemperature(-0.5);
+        case AppStateManager::AppState::CURRENT_TEMPERATURE:
             appStateManager.setAppState(AppStateManager::AppState::SET_TEMPERATURE);
-            appStateManager.recordAdjustmentTime();
-            lastChangeTime = millis();
-        }
+            tempController.adjustSetTemperature(-0.5);
+            break;
+        case AppStateManager::AppState::SET_TEMPERATURE:
+            tempController.adjustSetTemperature(-0.5);
+            break;
+        case AppStateManager::AppState::MENU:
+            appStateManager.handleInput(2); // Down
+            break;
+        default:
+            break;
+    }
+}
+
+void ButtonManager::handleButtonAEvents()
+{
+    switch (appStateManager.getAppState())
+    {
+        case AppStateManager::AppState::CURRENT_TEMPERATURE:
+            appStateManager.setAppState(AppStateManager::AppState::MENU);
+            break;
+        case AppStateManager::AppState::SET_TEMPERATURE:
+            appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
+            break;
+        case AppStateManager::AppState::MENU:
+            appStateManager.handleInput(3); // Select
+            break;
+        default:
+            break;
+    }
+}
+
+void ButtonManager::handleButtonBEvents()
+{
+    switch (appStateManager.getAppState())
+    {
+        case AppStateManager::AppState::CURRENT_TEMPERATURE:
+            tempController.toggleMode();
+            break;
+        case AppStateManager::AppState::SET_TEMPERATURE:
+            appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
+            break;
+        case AppStateManager::AppState::MENU:
+            appStateManager.handleInput(4); // Back
+            break;
+        case AppStateManager::AppState::OFF:
+            appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
+            break;
+        default:
+            break;
     }
 }

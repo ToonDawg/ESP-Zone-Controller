@@ -46,6 +46,7 @@ public:
     void displayCenteredWrappedText(const String &text);
     void displaySettingsMenu(const Menu &menu);
     void displayMenuTitle(const String title);
+    void drawScrollIndicator(bool isUpIndicator);
 
     uint16_t getWidth() const { return display.width(); }
     uint16_t getHeight() const { return display.height(); }

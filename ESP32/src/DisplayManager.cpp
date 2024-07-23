@@ -235,6 +235,14 @@ void DisplayManager::displaySettingsMenu(const Menu &menu)
     }
 }
 
+void DisplayManager::drawScrollIndicator(bool isUpIndicator) {
+    if (isUpIndicator) {
+        display.fillTriangle(display.width() - 8, 16, display.width() - 5, 12, display.width() - 2, 16, MONOOLED_WHITE);
+    } else {
+        display.fillTriangle(display.width() - 8, display.height() - 6, display.width() - 5, display.height() - 2, display.width() - 2, display.height() - 6, MONOOLED_WHITE);
+    }
+}
+
 void DisplayManager::displayMenuTitle(const String title)
 {
     TextStyle titleStyle(FontSize::SMALL, MONOOLED_WHITE, TextAlignment::CENTER);

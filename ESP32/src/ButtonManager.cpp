@@ -85,62 +85,20 @@ void ButtonManager::handleALongPressStart()
 
 void ButtonManager::handleIncreaseButtonEvents()
 {
-    switch (appStateManager.getAppState())
-    {
-    case AppStateManager::AppState::SET_TEMPERATURE:
-        tempController.adjustSetTemperature(0.5);
-        break;
-    case AppStateManager::AppState::MENU:
-        appStateManager.handleInput(AppStateManager::ButtonInput::UP);
-        break;
-    default:
-        break;
-    }
+    appStateManager.handleInput(AppStateManager::ButtonInput::UP);
 }
 
 void ButtonManager::handleDecreaseButtonEvents()
 {
-    switch (appStateManager.getAppState())
-    {
-    case AppStateManager::AppState::SET_TEMPERATURE:
-        tempController.adjustSetTemperature(-0.5);
-        break;
-    case AppStateManager::AppState::MENU:
-        appStateManager.handleInput(AppStateManager::ButtonInput::DOWN);
-        break;
-    default:
-        break;
-    }
+    appStateManager.handleInput(AppStateManager::ButtonInput::DOWN);
 }
 
 void ButtonManager::handleButtonAEvents()
 {
-    switch (appStateManager.getAppState())
-    {
-    case AppStateManager::AppState::CURRENT_TEMPERATURE:
-        tempController.toggleMode();
-        break;
-    case AppStateManager::AppState::MENU:
-        appStateManager.handleInput(AppStateManager::ButtonInput::SELECT);
-        break;
-    default:
-        appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
-        break;
-    }
+    appStateManager.handleInput(AppStateManager::ButtonInput::SELECT);
 }
 
 void ButtonManager::handleButtonBEvents()
 {
-    switch (appStateManager.getAppState())
-    {
-    case AppStateManager::AppState::CURRENT_TEMPERATURE:
-        appStateManager.setAppState(AppStateManager::AppState::OFF);
-        break;
-    case AppStateManager::AppState::MENU:
-        appStateManager.handleInput(AppStateManager::ButtonInput::BACK);
-        break;
-    default:
-        appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
-        break;
-    }
+    appStateManager.handleInput(AppStateManager::ButtonInput::BACK);
 }

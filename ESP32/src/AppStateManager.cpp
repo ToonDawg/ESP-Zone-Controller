@@ -20,24 +20,33 @@ void AppStateManager::initializeMenus()
 {
     menuRouter.createMenu("settings", "Settings");
     menuRouter.addMenuItem("settings", MenuItem("Temp. Calibration", ActionType::CHANGE_APP_STATE, [this]()
-                                            { setAppState(AppState::CALIBRATE_TEMPERATURE); }));
+                                                { setAppState(AppState::CALIBRATE_TEMPERATURE); }));
     menuRouter.addMenuItem("settings", MenuItem("Motor Direction", ActionType::OPEN_SUBMENU, "motor_dir"));
-    menuRouter.addMenuItem("motor_dir", MenuItem("Normal", ActionType::EXECUTE_CALLBACK, [this](){ settings.setMotorDirection(MotorDirection::Normal); }));
-    menuRouter.addMenuItem("motor_dir", MenuItem("Reversed", ActionType::EXECUTE_CALLBACK, [this](){ settings.setMotorDirection(MotorDirection::Reversed); }));
+    menuRouter.addMenuItem("motor_dir", MenuItem("Normal", ActionType::EXECUTE_CALLBACK, [this]()
+                                                 { settings.setMotorDirection(MotorDirection::Normal); }));
+    menuRouter.addMenuItem("motor_dir", MenuItem("Reversed", ActionType::EXECUTE_CALLBACK, [this]()
+                                                 { settings.setMotorDirection(MotorDirection::Reversed); }));
 
     menuRouter.addMenuItem("settings", MenuItem("Temp. Unit", ActionType::OPEN_SUBMENU, "temp_unit"));
-    menuRouter.addMenuItem("temp_unit", MenuItem("Celsius", ActionType::EXECUTE_CALLBACK, [this](){ settings.setTemperatureUnit(TemperatureUnit::Celsius); }));
-    menuRouter.addMenuItem("temp_unit", MenuItem("Fahrenheit", ActionType::EXECUTE_CALLBACK, [this](){ settings.setTemperatureUnit(TemperatureUnit::Fahrenheit); }));
+    menuRouter.addMenuItem("temp_unit", MenuItem("Celsius", ActionType::EXECUTE_CALLBACK, [this]()
+                                                 { settings.setTemperatureUnit(TemperatureUnit::Celsius); }));
+    menuRouter.addMenuItem("temp_unit", MenuItem("Fahrenheit", ActionType::EXECUTE_CALLBACK, [this]()
+                                                 { settings.setTemperatureUnit(TemperatureUnit::Fahrenheit); }));
     menuRouter.addMenuItem("settings", MenuItem("Auto Sleep", ActionType::OPEN_SUBMENU, "auto_sleep"));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("Off", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(0); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("10s", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(10000); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("30s", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(30000); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("1m", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(60000); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("5m", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(300000); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("30m", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(1800000); }));
-    
-    menuRouter.addMenuItem("settings", MenuItem("About", ActionType::OPEN_SUBMENU, "about"));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("Off", ActionType::EXECUTE_CALLBACK, [this]()
+                                                  { settings.setAutoSleepOption(0); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("10s", ActionType::EXECUTE_CALLBACK, [this]()
+                                                  { settings.setAutoSleepOption(10000); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("30s", ActionType::EXECUTE_CALLBACK, [this]()
+                                                  { settings.setAutoSleepOption(30000); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("1m", ActionType::EXECUTE_CALLBACK, [this]()
+                                                  { settings.setAutoSleepOption(60000); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("5m", ActionType::EXECUTE_CALLBACK, [this]()
+                                                  { settings.setAutoSleepOption(300000); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("30m", ActionType::EXECUTE_CALLBACK, [this]()
+                                                  { settings.setAutoSleepOption(1800000); }));
 
+    menuRouter.addMenuItem("settings", MenuItem("About", ActionType::OPEN_SUBMENU, "about"));
 
     menuRouter.navigateToMenu("main");
 }
@@ -220,7 +229,6 @@ void AppStateManager::updateLatestVersionInSettings(const String &version)
     }
 }
 
-
 void AppStateManager::handleInput(ButtonInput input)
 {
     resetSleepTimer();
@@ -237,10 +245,10 @@ void AppStateManager::handleInput(ButtonInput input)
         case ButtonInput::UP:
             temperatureController.adjustSetTemperature(0.5);
             break;
-        case ButtonInput::DOWN: 
+        case ButtonInput::DOWN:
             temperatureController.adjustSetTemperature(-0.5);
             break;
-        case ButtonInput::SELECT:
+        default:
             setAppState(AppState::CURRENT_TEMPERATURE);
             break;
         }
@@ -266,8 +274,7 @@ void AppStateManager::handleInput(ButtonInput input)
             break;
         }
     case AppState::OFF:
-        if (input != ButtonInput::BACK)
-            setAppState(AppState::CURRENT_TEMPERATURE);
+        setAppState(AppState::CURRENT_TEMPERATURE);
         break;
     case AppState::UPDATING:
         break;

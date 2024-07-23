@@ -22,7 +22,7 @@ void TemperatureController::update()
     {
         lastUpdateTime = currentTime;
         temperatureSensor.update();
-        currentStatus.currentTemperature = settings.getTemperatureUnit()
+        currentStatus.currentTemperature = settings.getTemperatureUnit() == TemperatureUnit::Celsius
                                                ? temperatureSensor.readTemperature()
                                                : temperatureSensor.readTemperatureF();
     }

@@ -25,3 +25,9 @@ struct TemperatureStatus
     Mode mode;
     MotorState motorState;
 };
+
+enum class TemperatureUnit
+{
+    Celsius,
+    Fahrenheit
+};

@@ -17,7 +17,8 @@ public:
         SET_TEMPERATURE,
         OFF,
         MENU,
-        UPDATING
+        UPDATING,
+        CALIBRATE_TEMPERATURE
     };
 
     AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, Settings& settings, OTAUpdater& updater, MenuRouter& menuRouter);

@@ -5,76 +5,94 @@
 
 Settings::Settings() : preferences() {}
 
-void Settings::begin() {
-    preferences.begin("core", false); 
+void Settings::begin()
+{
+    preferences.begin("core", false);
 }
 
-void Settings::setTemperatureUnit(bool isCelsius) {
-    preferences.putBool("temp_unit", isCelsius);
+void Settings::setTemperatureUnit(TemperatureUnit unit)
+{
+    preferences.putInt("temp_unit", static_cast<int>(unit));
 }
 
-bool Settings::getTemperatureUnit() {
-    return preferences.getBool("temp_unit", true);
+TemperatureUnit Settings::getTemperatureUnit()
+{
+    return static_cast<TemperatureUnit>(preferences.getInt("temp_unit", static_cast<int>(TemperatureUnit::Celsius)));
 }
 
-void Settings::setSetTemperature(float setTemp) {
+void Settings::setSetTemperature(float setTemp)
+{
     preferences.putFloat("set_temp", setTemp);
 }
 
-float Settings::getSetTemperature() {
+float Settings::getSetTemperature()
+{
     return preferences.getFloat("set_temp", 24.0);
 }
 
-void Settings::setMotorDirection(MotorDirection direction) {
+void Settings::setMotorDirection(MotorDirection direction)
+{
     preferences.putInt("motor_dir", static_cast<int>(direction));
 }
 
-MotorDirection Settings::getMotorDirection() {
+MotorDirection Settings::getMotorDirection()
+{
     return static_cast<MotorDirection>(preferences.getInt("motor_dir", static_cast<int>(MotorDirection::Normal)));
 }
 
-void Settings::setTemperatureCalibration(float calibration) {
+void Settings::setTemperatureCalibration(float calibration)
+{
     preferences.putFloat("temp_cal", calibration);
 }
 
-float Settings::getTemperatureCalibration() {
-    return preferences.getFloat("temp_cal", 0.0); 
+float Settings::getTemperatureCalibration()
+{
+    return preferences.getFloat("temp_cal", 0.0);
 }
 
-void Settings::setCurrentSoftwareVersion(String version) {
+void Settings::setCurrentSoftwareVersion(String version)
+{
     preferences.putString("current_ver", version);
 }
 
-String Settings::getCurrentSoftwareVersion() {
+String Settings::getCurrentSoftwareVersion()
+{
     return preferences.getString("current_ver", "v0.0.2");
 }
 
-void Settings::updateAllSettings(bool isCelsius, bool isNormal, float calibration) {
+void Settings::updateAllSettings(bool isCelsius, bool isNormal, float calibration)
+{
     preferences.putBool("temp_unit", isCelsius);
     preferences.putBool("motor_dir", isNormal);
     preferences.putFloat("temp_cal", calibration);
 }
 
-void Settings::setLastUpdateCheck(unsigned long time) {
+void Settings::setLastUpdateCheck(unsigned long time)
+{
     preferences.putULong("last_update", time);
 }
 
-unsigned long Settings::getLastUpdateCheck() {
+unsigned long Settings::getLastUpdateCheck()
+{
     return preferences.getULong("last_update", 0);
 }
 
-void Settings::setLatestAvailableVersion(const String& version) {
+void Settings::setLatestAvailableVersion(const String &version)
+{
     preferences.putString("latest_ver", version);
 }
 
-String Settings::getLatestAvailableVersion() {
+String Settings::getLatestAvailableVersion()
+{
     return preferences.getString("latest_ver", "");
 }
 
-void Settings::setAutoSleepOption(int option) {
+void Settings::setAutoSleepOption(int option)
+{
     preferences.putInt("auto_sleep", option);
 }
 
-int Settings::getAutoSleepOption() {
+int Settings::getAutoSleepOption()
+{
     return preferences.getInt("auto_sleep", 0); // Default to 0 (Off)
 }

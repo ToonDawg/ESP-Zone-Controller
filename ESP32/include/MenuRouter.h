@@ -16,8 +16,9 @@ public:
     void navigateDown();
     void selectCurrentItem();
     Menu* getCurrentMenu() const;
+    bool isAtRootMenu() const;
     void navigateToParentMenu();
-    
+
 private:
     std::map<String, Menu*> m_menuMap;
     Menu* m_currentMenu;

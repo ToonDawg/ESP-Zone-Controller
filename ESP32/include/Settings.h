@@ -10,8 +10,8 @@ public:
 
     void begin();
 
-    void setTemperatureUnit(bool isCelsius);
-    bool getTemperatureUnit();
+    void setTemperatureUnit(TemperatureUnit unit);
+    TemperatureUnit getTemperatureUnit();
 
     void setSetTemperature(float setTemp);
     float getSetTemperature();

@@ -30,6 +30,7 @@ private:
     static void handleDecreaseLongPressStart();
     static void handleIncreaseLongPress();
     static void handleDecreaseLongPress();
+    static void handleALongPressStart();
 
     void handleIncreaseButtonEvents();
     void handleDecreaseButtonEvents();

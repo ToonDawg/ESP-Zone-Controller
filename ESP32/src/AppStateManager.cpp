@@ -3,7 +3,7 @@
 #include "AppStateManager.h"
 #include "Settings.h"
 
-AppStateManager::AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, Settings& settings, OTAUpdater& updater, MenuRouter& menuRouter)
+AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater, MenuRouter &menuRouter)
     : currentState(AppState::CURRENT_TEMPERATURE),
       displayManager(displayManager),
       temperatureController(tempController),
@@ -18,17 +18,25 @@ AppStateManager::AppStateManager(DisplayManager& displayManager, TemperatureCont
 
 void AppStateManager::initializeMenus()
 {
-    menuRouter.createMenu("main", "Main Menu");
-    menuRouter.addMenuItem("main", MenuItem("Settings", ActionType::OPEN_SUBMENU, "settings"));
-    menuRouter.addMenuItem("main", MenuItem("Turn Off", ActionType::CHANGE_APP_STATE, [this]() { setAppState(AppState::OFF); }));
-
-    menuRouter.createMenu("settings", "Settings", "main");
-    menuRouter.addMenuItem("settings", MenuItem("Temp. Calibration", ActionType::OPEN_SUBMENU, "temp_cal"));
+    menuRouter.createMenu("settings", "Settings");
+    menuRouter.addMenuItem("settings", MenuItem("Temp. Calibration", ActionType::CHANGE_APP_STATE, [this]()
+                                            { setAppState(AppState::CALIBRATE_TEMPERATURE); }));
     menuRouter.addMenuItem("settings", MenuItem("Motor Direction", ActionType::OPEN_SUBMENU, "motor_dir"));
-    menuRouter.addMenuItem("settings", MenuItem("Temp. Unit", ActionType::OPEN_SUBMENU, "temp_unit"));
-    menuRouter.addMenuItem("settings", MenuItem("Auto Sleep", ActionType::OPEN_SUBMENU, "auto_sleep"));
-    menuRouter.addMenuItem("settings", MenuItem("About", ActionType::OPEN_SUBMENU, "about"));
+    menuRouter.addMenuItem("motor_dir", MenuItem("Normal", ActionType::EXECUTE_CALLBACK, [this](){ settings.setMotorDirection(MotorDirection::Normal); }));
+    menuRouter.addMenuItem("motor_dir", MenuItem("Reversed", ActionType::EXECUTE_CALLBACK, [this](){ settings.setMotorDirection(MotorDirection::Reversed); }));
 
+    menuRouter.addMenuItem("settings", MenuItem("Temp. Unit", ActionType::OPEN_SUBMENU, "temp_unit"));
+    menuRouter.addMenuItem("temp_unit", MenuItem("Celsius", ActionType::EXECUTE_CALLBACK, [this](){ settings.setTemperatureUnit(TemperatureUnit::Celsius); }));
+    menuRouter.addMenuItem("temp_unit", MenuItem("Fahrenheit", ActionType::EXECUTE_CALLBACK, [this](){ settings.setTemperatureUnit(TemperatureUnit::Fahrenheit); }));
+    menuRouter.addMenuItem("settings", MenuItem("Auto Sleep", ActionType::OPEN_SUBMENU, "auto_sleep"));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("Off", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(0); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("10s", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(10000); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("30s", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(30000); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("1m", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(60000); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("5m", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(300000); }));
+    menuRouter.addMenuItem("auto_sleep", MenuItem("30m", ActionType::EXECUTE_CALLBACK, [this](){ settings.setAutoSleepOption(1800000); }));
+    
+    menuRouter.addMenuItem("settings", MenuItem("About", ActionType::OPEN_SUBMENU, "about"));
 
 
     menuRouter.navigateToMenu("main");
@@ -64,6 +72,9 @@ void AppStateManager::display()
     case AppState::UPDATING:
         displayUpdating();
         break;
+    case AppState::CALIBRATE_TEMPERATURE:
+        displayTemperatureCalibration();
+        break;
     }
     displayManager.render();
 }
@@ -84,10 +95,9 @@ void AppStateManager::recordAdjustmentTime()
     lastSetTempAdjustmentTime = millis();
 }
 
-
 void AppStateManager::displayCurrentTemperature()
 {
-    tImage tempIcon = settings.getTemperatureUnit() ? celciusIcon : fahrenheitIcon;
+    tImage tempIcon = settings.getTemperatureUnit() == TemperatureUnit::Celsius ? celciusIcon : fahrenheitIcon;
     displayManager.displayTemperature(temperatureController.getStatus().currentTemperature, tempIcon);
     displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
     displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
@@ -120,7 +130,6 @@ void AppStateManager::displayCheckForUpdates()
     }
 }
 
-
 bool AppStateManager::shouldCheckForUpdates()
 {
     unsigned long lastCheck = settings.getLastUpdateCheck();
@@ -131,14 +140,14 @@ bool AppStateManager::shouldCheckForUpdates()
 
 void AppStateManager::displaySetTemperature()
 {
-    tImage tempIcon = settings.getTemperatureUnit() ? celciusIcon : fahrenheitIcon;
+    tImage tempIcon = settings.getTemperatureUnit() == TemperatureUnit::Celsius ? celciusIcon : fahrenheitIcon;
     displayManager.displayTemperature(temperatureController.getStatus().setTemperature, tempIcon);
     displayManager.displayBottomCenterText("Set Temp");
 }
 
 void AppStateManager::displayTemperatureCalibration()
 {
-    tImage tempIcon = settings.getTemperatureUnit() ? celciusIcon : fahrenheitIcon;
+    tImage tempIcon = settings.getTemperatureUnit() == TemperatureUnit::Celsius ? celciusIcon : fahrenheitIcon;
     displayManager.displayTemperature(settings.getTemperatureCalibration(), tempIcon);
     displayManager.displayBottomCenterText("Temp. Calibration");
 }
@@ -185,13 +194,10 @@ void AppStateManager::displayUpdate()
     }
 }
 
-
 void AppStateManager::displayUpdating()
 {
     displayManager.displayCenteredWrappedText("Updating...");
 }
-
-
 
 void AppStateManager::checkAutoSleep()
 {
@@ -214,7 +220,6 @@ void AppStateManager::updateLatestVersionInSettings(const String &version)
     }
 }
 
-// AppStateManager.cpp
 
 void AppStateManager::handleInput(ButtonInput input)
 {
@@ -223,38 +228,50 @@ void AppStateManager::handleInput(ButtonInput input)
     switch (currentState)
     {
     case AppState::CURRENT_TEMPERATURE:
-        if (input == ButtonInput::SELECT) // Enter menu
+        if (input == ButtonInput::SELECT)
             setAppState(AppState::MENU);
-        // Handle other inputs for CURRENT_TEMPERATURE state
         break;
     case AppState::SET_TEMPERATURE:
-        // Handle inputs for SET_TEMPERATURE state
-        if (input == ButtonInput::UP) // Increase temperature
+        switch (input)
+        {
+        case ButtonInput::UP:
             temperatureController.adjustSetTemperature(0.5);
-        else if (input == ButtonInput::DOWN) // Decrease temperature
+            break;
+        case ButtonInput::DOWN: 
             temperatureController.adjustSetTemperature(-0.5);
-        else if (input == ButtonInput::SELECT) // Confirm and return to CURRENT_TEMPERATURE
+            break;
+        case ButtonInput::SELECT:
             setAppState(AppState::CURRENT_TEMPERATURE);
+            break;
+        }
         break;
     case AppState::MENU:
-        if (input == ButtonInput::UP) // Up
+        switch (input)
+        {
+        case ButtonInput::UP:
             menuRouter.navigateUp();
-        else if (input == ButtonInput::DOWN) // Down
+            break;
+        case ButtonInput::DOWN:
             menuRouter.navigateDown();
-        else if (input == ButtonInput::SELECT) // Select
+            break;
+        case ButtonInput::SELECT:
             menuRouter.selectCurrentItem();
-        else if (input == ButtonInput::BACK) // Back
+            break;
+        case ButtonInput::BACK:
+            if (menuRouter.isAtRootMenu())
+            {
+                setAppState(AppState::CURRENT_TEMPERATURE);
+            }
             menuRouter.navigateToParentMenu();
-        break;
+            break;
+        }
     case AppState::OFF:
-        if (input != ButtonInput::BACK) // Any input turns the device on
+        if (input != ButtonInput::BACK)
             setAppState(AppState::CURRENT_TEMPERATURE);
         break;
     case AppState::UPDATING:
-        // Normally, we don't handle inputs during update
         break;
     }
 
-    // After handling input, update the display
     display();
 }

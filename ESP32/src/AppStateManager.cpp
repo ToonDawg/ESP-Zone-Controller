@@ -216,38 +216,38 @@ void AppStateManager::updateLatestVersionInSettings(const String &version)
 
 // AppStateManager.cpp
 
-void AppStateManager::handleInput(int input)
+void AppStateManager::handleInput(ButtonInput input)
 {
     resetSleepTimer();
 
     switch (currentState)
     {
     case AppState::CURRENT_TEMPERATURE:
-        if (input == 1) // Assume 1 is for entering menu
+        if (input == ButtonInput::SELECT) // Enter menu
             setAppState(AppState::MENU);
         // Handle other inputs for CURRENT_TEMPERATURE state
         break;
     case AppState::SET_TEMPERATURE:
         // Handle inputs for SET_TEMPERATURE state
-        if (input == 1) // Increase temperature
+        if (input == ButtonInput::UP) // Increase temperature
             temperatureController.adjustSetTemperature(0.5);
-        else if (input == 2) // Decrease temperature
+        else if (input == ButtonInput::DOWN) // Decrease temperature
             temperatureController.adjustSetTemperature(-0.5);
-        else if (input == 3) // Confirm and return to CURRENT_TEMPERATURE
+        else if (input == ButtonInput::SELECT) // Confirm and return to CURRENT_TEMPERATURE
             setAppState(AppState::CURRENT_TEMPERATURE);
         break;
     case AppState::MENU:
-        if (input == 1) // Up
+        if (input == ButtonInput::UP) // Up
             menuRouter.navigateUp();
-        else if (input == 2) // Down
+        else if (input == ButtonInput::DOWN) // Down
             menuRouter.navigateDown();
-        else if (input == 3) // Select
+        else if (input == ButtonInput::SELECT) // Select
             menuRouter.selectCurrentItem();
-        else if (input == 4) // Back
+        else if (input == ButtonInput::BACK) // Back
             menuRouter.navigateToParentMenu();
         break;
     case AppState::OFF:
-        if (input != 0) // Any input turns the device on
+        if (input != ButtonInput::BACK) // Any input turns the device on
             setAppState(AppState::CURRENT_TEMPERATURE);
         break;
     case AppState::UPDATING:

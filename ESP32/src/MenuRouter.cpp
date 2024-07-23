@@ -87,5 +87,10 @@ void MenuRouter::navigateToParentMenu()
         // If there's no parent menu but we're not at the root, go to the root menu
         m_currentMenu = m_rootMenu;
     }
-    // If we're already at the root menu, do nothing
+    // If we're already at the root menu, go to AppState::CURRENT_TEMPERATURE
+    if (m_currentMenu == m_rootMenu) {
+        // Assuming AppStateManager has a method to set the state to CURRENT_TEMPERATURE
+        // This should be implemented in AppStateManager and called here
+        // appStateManager.setAppState(AppStateManager::AppState::CURRENT_TEMPERATURE);
+    }
 }

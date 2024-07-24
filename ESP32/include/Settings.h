@@ -25,6 +25,8 @@ public:
     void setAutoSleepOption(int option);
     int getAutoSleepOption();
 
+    void printAllSettings();
+
     void setCurrentSoftwareVersion(String version);
     String getCurrentSoftwareVersion();
 

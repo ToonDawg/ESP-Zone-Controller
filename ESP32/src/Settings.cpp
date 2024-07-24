@@ -94,5 +94,44 @@ void Settings::setAutoSleepOption(int option)
 
 int Settings::getAutoSleepOption()
 {
-    return preferences.getInt("auto_sleep", 0); // Default to 0 (Off)
+    return preferences.getInt("auto_sleep", 0);
+}
+
+void Settings::printAllSettings() {
+    Serial.println("Current Settings:");
+    Serial.println("--------------------");
+
+    // Temperature Unit
+    Serial.print("Temperature Unit: ");
+    Serial.println(getTemperatureUnit() == TemperatureUnit::Celsius ? "Celsius" : "Fahrenheit");
+
+    // Set Temperature
+    Serial.print("Set Temperature: ");
+    Serial.println(getSetTemperature());
+
+    // Motor Direction
+    Serial.print("Motor Direction: ");
+    Serial.println(getMotorDirection() == MotorDirection::Normal ? "Normal" : "Reverse");
+
+    // Temperature Calibration
+    Serial.print("Temperature Calibration: ");
+    Serial.println(getTemperatureCalibration());
+
+    // Current Software Version
+    Serial.print("Current Software Version: ");
+    Serial.println(getCurrentSoftwareVersion());
+
+    // Last Update Check
+    Serial.print("Last Update Check: ");
+    Serial.println(getLastUpdateCheck());
+
+    // Latest Available Version
+    Serial.print("Latest Available Version: ");
+    Serial.println(getLatestAvailableVersion());
+
+    // Auto Sleep Option
+    Serial.print("Auto Sleep Option: ");
+    Serial.println(getAutoSleepOption());
+
+    Serial.println("--------------------");
 }

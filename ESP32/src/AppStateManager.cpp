@@ -22,17 +22,20 @@ void AppStateManager::initializeMenus()
     menuRouter.addMenuItem("settings", MenuItem("Temp. Calibration", ActionType::CHANGE_APP_STATE, [this]()
                                                 { setAppState(AppState::CALIBRATE_TEMPERATURE); }));
     menuRouter.addMenuItem("settings", MenuItem("Motor Direction", ActionType::OPEN_SUBMENU, "motor_dir"));
+    menuRouter.createMenu("motor_dir", "Motor Direction");
     menuRouter.addMenuItem("motor_dir", MenuItem("Normal", ActionType::EXECUTE_CALLBACK, [this]()
                                                  { settings.setMotorDirection(MotorDirection::Normal); }));
     menuRouter.addMenuItem("motor_dir", MenuItem("Reversed", ActionType::EXECUTE_CALLBACK, [this]()
                                                  { settings.setMotorDirection(MotorDirection::Reversed); }));
 
     menuRouter.addMenuItem("settings", MenuItem("Temp. Unit", ActionType::OPEN_SUBMENU, "temp_unit"));
+    menuRouter.createMenu("temp_unit", "Temperature Unit");
     menuRouter.addMenuItem("temp_unit", MenuItem("Celsius", ActionType::EXECUTE_CALLBACK, [this]()
                                                  { settings.setTemperatureUnit(TemperatureUnit::Celsius); }));
     menuRouter.addMenuItem("temp_unit", MenuItem("Fahrenheit", ActionType::EXECUTE_CALLBACK, [this]()
                                                  { settings.setTemperatureUnit(TemperatureUnit::Fahrenheit); }));
     menuRouter.addMenuItem("settings", MenuItem("Auto Sleep", ActionType::OPEN_SUBMENU, "auto_sleep"));
+    menuRouter.createMenu("auto_sleep", "Auto Sleep");
     menuRouter.addMenuItem("auto_sleep", MenuItem("Off", ActionType::EXECUTE_CALLBACK, [this]()
                                                   { settings.setAutoSleepOption(0); }));
     menuRouter.addMenuItem("auto_sleep", MenuItem("10s", ActionType::EXECUTE_CALLBACK, [this]()
@@ -47,6 +50,16 @@ void AppStateManager::initializeMenus()
                                                   { settings.setAutoSleepOption(1800000); }));
 
     menuRouter.addMenuItem("settings", MenuItem("About", ActionType::OPEN_SUBMENU, "about"));
+    menuRouter.createMenu("about", "About");
+    menuRouter.addMenuItem("about", MenuItem("Check for updates", ActionType::CHANGE_APP_STATE, [this]()
+                                             { setAppState(AppState::CHECK_FOR_UPDATES); }));
+    menuRouter.addMenuItem("about", MenuItem("Update", ActionType::CHANGE_APP_STATE, [this]()
+                                             { setAppState(AppState::UPDATE); }));
+
+    menuRouter.addMenuItem("about", MenuItem("Device Details", ActionType::OPEN_SUBMENU, "device_details"));
+    menuRouter.createMenu("device_details", "Device Details");
+    menuRouter.addMenuItem("device_details", MenuItem("ESP32", ActionType::CHANGE_APP_STATE, [this]()
+                                                      { settings.printAllSettings(); }));
 
     menuRouter.navigateToMenu("main");
 }
@@ -83,12 +96,19 @@ void AppStateManager::display()
     case AppState::CALIBRATE_TEMPERATURE:
         displayTemperatureCalibration();
         break;
+    case AppState::CHECK_FOR_UPDATES:
+        displayCheckForUpdates();
+        break;
+    case AppState::UPDATE:
+        displayUpdate();
+        break;
     }
     displayManager.render();
 }
 
 void AppStateManager::displayMenu()
 {
+    String menuTitle = menuRouter.getCurrentMenu()->getTitle();
     menuRenderer.renderMenu(*menuRouter.getCurrentMenu());
 }
 
@@ -114,7 +134,6 @@ void AppStateManager::displayCurrentTemperature()
 void AppStateManager::displayCheckForUpdates()
 {
     displayManager.displayMenuTitle("Check for updates");
-
     if (shouldCheckForUpdates())
     {
         displayManager.showLoaderWithText("Checking...");
@@ -142,6 +161,7 @@ bool AppStateManager::shouldCheckForUpdates()
 {
     unsigned long lastCheck = settings.getLastUpdateCheck();
     unsigned long currentTime = millis();
+    Serial.println( "Last check: " + lastCheck);
 
     return (currentTime - lastCheck) > 600000 || lastCheck == 0;
 }
@@ -207,16 +227,18 @@ void AppStateManager::displayUpdating()
     displayManager.displayCenteredWrappedText("Updating...");
 }
 
-void AppStateManager::checkAutoSleep() {
-        unsigned long autoSleepOption = settings.getAutoSleepOption();
-        unsigned long currentTime = millis();
-        unsigned long timeSinceLastActivity = currentTime - lastActivityTime;
+void AppStateManager::checkAutoSleep()
+{
+    unsigned long autoSleepOption = settings.getAutoSleepOption();
+    unsigned long currentTime = millis();
+    unsigned long timeSinceLastActivity = currentTime - lastActivityTime;
 
-        if (currentState != AppState::OFF && autoSleepOption > 0 && timeSinceLastActivity < autoSleepOption) {
-            Serial.println(F("Auto sleep activated"));
-            setAppState(AppState::OFF);
-        }
+    if (currentState != AppState::OFF && autoSleepOption > 0 && timeSinceLastActivity > autoSleepOption)
+    {
+        Serial.println(F("Auto sleep activated"));
+        setAppState(AppState::OFF);
     }
+}
 
 void AppStateManager::resetSleepTimer()
 {
@@ -246,6 +268,7 @@ void AppStateManager::handleInput(ButtonInput input)
         {
         case ButtonInput::UP:
         case ButtonInput::DOWN:
+            lastSetTempAdjustmentTime = millis();
             setAppState(AppState::SET_TEMPERATURE);
             break;
         case ButtonInput::SELECT:
@@ -266,6 +289,21 @@ void AppStateManager::handleInput(ButtonInput input)
         case ButtonInput::DOWN:
             lastSetTempAdjustmentTime = millis();
             temperatureController.adjustSetTemperature(-0.5);
+            break;
+        case ButtonInput::SELECT:
+        case ButtonInput::BACK:
+            setAppState(AppState::CURRENT_TEMPERATURE);
+            break;
+        }
+        break;
+    case AppState::CALIBRATE_TEMPERATURE:
+        switch (input)
+        {
+        case ButtonInput::UP:
+            temperatureController.adjustCalibrationTemperature(0.5);
+            break;
+        case ButtonInput::DOWN:
+            temperatureController.adjustCalibrationTemperature(-0.5);
             break;
         case ButtonInput::SELECT:
         case ButtonInput::BACK:
@@ -300,6 +338,26 @@ void AppStateManager::handleInput(ButtonInput input)
     case AppState::OFF:
         setAppState(AppState::CURRENT_TEMPERATURE);
         break;
+    case AppState::CHECK_FOR_UPDATES:
+        switch (input)
+        {
+        case ButtonInput::BACK:
+            setAppState(AppState::MENU);
+            break;
+        }
+        break;
+    case AppState::UPDATE:
+        switch (input)
+        {
+        case ButtonInput::SELECT:
+            updater.performUpdate();
+            break;
+        case ButtonInput::BACK:
+            setAppState(AppState::MENU);
+            break;
+        }
+        break;
+
     }
 
     display();

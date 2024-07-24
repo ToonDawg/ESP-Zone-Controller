@@ -18,16 +18,19 @@ public:
         OFF,
         MENU,
         UPDATING,
-        CALIBRATE_TEMPERATURE
+        CALIBRATE_TEMPERATURE,
+        CHECK_FOR_UPDATES,
+        UPDATE,
     };
 
-    AppStateManager(DisplayManager& displayManager, TemperatureController& tempController, Settings& settings, OTAUpdater& updater, MenuRouter& menuRouter);
+    AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater, MenuRouter &menuRouter);
 
     void setAppState(AppState state);
     AppState getAppState() const;
     void display();
     void tick();
-    enum class ButtonInput {
+    enum class ButtonInput
+    {
         UP,
         DOWN,
         SELECT,
@@ -64,5 +67,4 @@ private:
     void recordAdjustmentTime();
     void displayUpdate();
     void displayTemperatureCalibration();
-
 };

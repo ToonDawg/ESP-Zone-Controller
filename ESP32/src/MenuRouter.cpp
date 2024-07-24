@@ -47,10 +47,14 @@ void MenuRouter::navigateDown() {
 }
 
 void MenuRouter::selectCurrentItem() {
+    Serial.println("Selecting current item");
+    Serial.println(m_currentMenu->getSelectedIndex());
     if (m_currentMenu) {
         int selectedIndex = m_currentMenu->getSelectedIndex();
         const std::vector<MenuItem>& items = m_currentMenu->getItems();
+        Serial.println(selectedIndex);
         if (selectedIndex >= 0 && selectedIndex < items.size()) {
+            Serial.println("Selected item: " + items[selectedIndex].getName());
             const MenuItem& selectedItem = items[selectedIndex];
             switch (selectedItem.getActionType()) {
                 case ActionType::EXECUTE_CALLBACK:

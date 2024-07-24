@@ -54,7 +54,6 @@ void AppStateManager::initializeMenus()
 void AppStateManager::setAppState(AppState state)
 {
     currentState = state;
-    lastSetTempAdjustmentTime = millis();
 }
 
 AppStateManager::AppState AppStateManager::getAppState() const
@@ -208,13 +207,16 @@ void AppStateManager::displayUpdating()
     displayManager.displayCenteredWrappedText("Updating...");
 }
 
-void AppStateManager::checkAutoSleep()
-{
-    if (currentState != AppState::OFF && millis() - lastActivityTime > SLEEP_TIMEOUT)
-    {
-        setAppState(AppState::OFF);
+void AppStateManager::checkAutoSleep() {
+        unsigned long autoSleepOption = settings.getAutoSleepOption();
+        unsigned long currentTime = millis();
+        unsigned long timeSinceLastActivity = currentTime - lastActivityTime;
+
+        if (currentState != AppState::OFF && autoSleepOption > 0 && timeSinceLastActivity < autoSleepOption) {
+            Serial.println(F("Auto sleep activated"));
+            setAppState(AppState::OFF);
+        }
     }
-}
 
 void AppStateManager::resetSleepTimer()
 {
@@ -232,23 +234,41 @@ void AppStateManager::updateLatestVersionInSettings(const String &version)
 void AppStateManager::handleInput(ButtonInput input)
 {
     resetSleepTimer();
+    Serial.print(F("Current state: "));
+    Serial.print(static_cast<int>(currentState));
+    Serial.print(F(", input: "));
+    Serial.println(static_cast<int>(input));
 
     switch (currentState)
     {
     case AppState::CURRENT_TEMPERATURE:
-        if (input == ButtonInput::SELECT)
-            setAppState(AppState::MENU);
+        switch (input)
+        {
+        case ButtonInput::UP:
+        case ButtonInput::DOWN:
+            setAppState(AppState::SET_TEMPERATURE);
+            break;
+        case ButtonInput::SELECT:
+            temperatureController.toggleMode();
+            break;
+        case ButtonInput::BACK:
+            setAppState(AppState::OFF);
+            break;
+        }
         break;
     case AppState::SET_TEMPERATURE:
         switch (input)
         {
         case ButtonInput::UP:
+            lastSetTempAdjustmentTime = millis();
             temperatureController.adjustSetTemperature(0.5);
             break;
         case ButtonInput::DOWN:
+            lastSetTempAdjustmentTime = millis();
             temperatureController.adjustSetTemperature(-0.5);
             break;
-        default:
+        case ButtonInput::SELECT:
+        case ButtonInput::BACK:
             setAppState(AppState::CURRENT_TEMPERATURE);
             break;
         }
@@ -270,13 +290,15 @@ void AppStateManager::handleInput(ButtonInput input)
             {
                 setAppState(AppState::CURRENT_TEMPERATURE);
             }
-            menuRouter.navigateToParentMenu();
+            else
+            {
+                menuRouter.navigateToParentMenu();
+            }
             break;
         }
+        break;
     case AppState::OFF:
         setAppState(AppState::CURRENT_TEMPERATURE);
-        break;
-    case AppState::UPDATING:
         break;
     }
 

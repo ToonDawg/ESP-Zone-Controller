@@ -31,6 +31,8 @@ void MenuRouter::navigateToMenu(const String& menuId) {
     Menu* menu = findMenu(menuId);
     if (menu) {
         m_currentMenu = menu;
+        // Trigger any necessary updates or redraws
+        updateDisplay();
     }
 }
 
@@ -95,4 +97,9 @@ void MenuRouter::navigateToParentMenu()
         // If there's no parent menu but we're not at the root, go to the root menu
         m_currentMenu = m_rootMenu;
     }
+}
+void MenuRouter::updateDisplay() {
+    // Placeholder for any necessary updates or redraws
+    // This should be implemented based on your display and UI update logic
+    Serial.println("Updating display for menu: " + m_currentMenu->getTitle());
 }

@@ -9,7 +9,6 @@ class OTAUpdater
 {
 public:
     OTAUpdater(const char *base_url, const char *device_name, Settings &settings);
-    bool isUpdateAvailable(const String &currentVersion);
     void performUpdate();
     String getLatestVersion();
     String getStoredLatestVersion() const { return _latestVersion; }
@@ -23,6 +22,7 @@ private:
     String _latestVersion;
     Settings &_settings;
     void updateUrls(const String &version);
+    bool isUpdateAvailable();
     bool downloadUpdate(HTTPClient &http);
     bool finalizeUpdate();
     String httpGet(const String &url);

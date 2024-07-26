@@ -44,9 +44,10 @@ void OTAUpdater::updateUrls(const String &version)
     Serial.println("Updated metadata URL: " + _metadata_url);
 }
 
-bool OTAUpdater::isUpdateAvailable(const String &currentVersion)
+bool OTAUpdater::isUpdateAvailable()
 {
     Serial.println("Checking for updates...");
+    String currentVersion = _settings.getCurrentSoftwareVersion();
     String latestVersion = getLatestVersion();
     if (latestVersion.isEmpty())
     {
@@ -131,7 +132,11 @@ void OTAUpdater::performUpdate()
         return;
     }
 
-    updateUrls(_settings.getLatestAvailableVersion());
+    if (!isUpdateAvailable())
+    {
+        Serial.println("No update available.");
+        return;
+    }
 
     Serial.println("Starting update process...");
     Serial.println("Firmware URL: " + _firmware_url);  // Log the URL for debugging
@@ -162,7 +167,6 @@ void OTAUpdater::performUpdate()
     if (downloadUpdate(http) && finalizeUpdate())
     {
         Serial.println("Update successful. Updating version and restarting device...");
-        _settings.setCurrentSoftwareVersion(_latestVersion);
         http.end();
         ESP.restart();
     }
@@ -217,6 +221,7 @@ bool OTAUpdater::finalizeUpdate()
         Serial.println("Update not finished. Something went wrong!");
         return false;
     }
+    _settings.setCurrentSoftwareVersion(_latestVersion);
 
     Serial.println("Update successfully completed. Ready to reboot.");
     return true;

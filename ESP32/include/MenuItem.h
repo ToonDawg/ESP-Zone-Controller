@@ -7,7 +7,8 @@
 enum class ActionType {
     EXECUTE_CALLBACK,
     OPEN_SUBMENU,
-    CHANGE_APP_STATE
+    CHANGE_APP_STATE,
+    DISPLAY_VALUE
 };
 
 class MenuItem {

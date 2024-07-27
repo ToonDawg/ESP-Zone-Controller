@@ -5,50 +5,44 @@
 #include <WiFi.h>
 #include "Settings.h"
 
-enum class WifiState {
+enum class WiFiManagerState : uint8_t
+{
     IDLE,
-    SMART_CONFIG,
+    SMARTCONFIG,
     CONNECTING,
     CONNECTED,
-    CONNECTION_FAILED
+    CONNECTION_FAILED,
+    DISCONNECTED
 };
 
-enum class WifiStatus {
-    NOT_CONNECTED,
-    WAITING_FOR_SMARTCONFIG,
-    SMARTCONFIG_RECEIVED,
-    CONNECTING,
-    CONNECTION_ATTEMPT_FAILED,
-    CONNECTED,
-    CONNECTION_LOST
-};
-
-class WiFiManager {
+class WiFiManager
+{
 public:
-    WiFiManager(Settings& settings);
+    WiFiManager(Settings &settings);
     void begin();
-    void update();
-    WifiStatus getStatus() const;
-    String getStatusMessage() const;
-    int getConnectionAttempts() const;
+    void processConnectionState();
+    WiFiManagerState getCurrentConnectionState() const { return state; }
+    const char *getLatestStatusMessage() const { return statusMessage; }
+    bool isWiFiConnected() const { return state == WiFiManagerState::CONNECTED; }
+    void disconnectAndClearCredentials();
+    void restartSmartConfig();
 
 private:
-    static const unsigned long CONNECTION_TIMEOUT = 30000; // 30 seconds
-    static const int MAX_CONNECTION_ATTEMPTS = 3;
-
-    WifiState state;
-    WifiStatus status;
-    Settings& settings;
+    static WiFiManager *instance;
+    static constexpr unsigned long CONNECTION_TIMEOUT = 30000; // 30 seconds
+    static constexpr int MAX_CONNECTION_ATTEMPTS = 3;
+    WiFiManagerState state;
+    Settings &settings;
     unsigned long connectionStartTime;
-    int connectionAttempts;
-    String statusMessage;
+    uint8_t connectionAttempts;
+    const char *statusMessage;
 
-    void startSmartConfig();
-    void updateSmartConfig();
-    void updateConnection();
-    bool connectWithStoredCredentials();
-    void saveWifiCredentials(const String& ssid, const String& password);
-    void setStatus(WifiStatus newStatus, const String& message);
+    void initiateSmartConfig();
+    void connectUsingStoredCredentials();
+    void handleConnectionAttempt();
+    void updateStateAndNotify(WiFiManagerState newState, const char *message);
+
+    static void handleWiFiStateChange(WiFiEvent_t event);
 };
 
 #endif // WIFI_MANAGER_H

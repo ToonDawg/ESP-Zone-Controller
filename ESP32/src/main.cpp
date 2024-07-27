@@ -95,7 +95,7 @@ void setup()
 
 void loop()
 {
-    wifiManager->update();
+    wifiManager->processConnectionState();
     buttonManager->tick();
     appStateManager->tick();
     tempController->update();

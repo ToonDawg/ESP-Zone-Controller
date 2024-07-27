@@ -54,13 +54,20 @@ void AppStateManager::initializeMenus()
                                              { setAppState(AppState::CHECK_FOR_UPDATES); }));
     menuRouter.addMenuItem("about", MenuItem("Update", ActionType::CHANGE_APP_STATE, [this]()
                                              { setAppState(AppState::UPDATE); }));
-    menuRouter.addMenuItem("about", MenuItem("WiFi", ActionType::CHANGE_APP_STATE, [this]()
-                                             { WiFi.disconnect();
-                                             settings.setWiFiPassword("");
-                                             settings.setWiFiSSID("");
-                                             setAppState(AppState::WIFI_PROVISIONING); }));
+    menuRouter.addMenuItem("about", MenuItem("WiFi", ActionType::OPEN_SUBMENU, "wifi"));
     menuRouter.addMenuItem("about", MenuItem("Device Details", ActionType::CHANGE_APP_STATE, [this]()
                                              { settings.printAllSettings(); }));
+
+    menuRouter.createMenu("wifi", "Wifi Settings");
+    menuRouter.addMenuItem("wifi", MenuItem("Connect", ActionType::CHANGE_APP_STATE, [this]()
+                                            { setAppState(AppState::WIFI_PROVISIONING); }));
+    menuRouter.addMenuItem("wifi", MenuItem("Disconnect", ActionType::EXECUTE_CALLBACK, [this]()
+                                            { wifiManager.disconnectAndClearCredentials(); }));
+    menuRouter.addMenuItem("wifi", MenuItem("Details", ActionType::OPEN_SUBMENU, "wifi_details"));
+    menuRouter.createMenu("wifi_details", "WiFi Details");
+    menuRouter.addMenuItem("wifi_details", MenuItem( WiFi.localIP().toString(), ActionType::DISPLAY_VALUE, [this]() {}));
+    menuRouter.addMenuItem("wifi_details", MenuItem( WiFi.macAddress(), ActionType::DISPLAY_VALUE, [this]() {}));
+    menuRouter.addMenuItem("wifi_details", MenuItem( WiFi.SSID(), ActionType::DISPLAY_VALUE, [this]() {}));
 
     menuRouter.navigateToMenu("main");
 }
@@ -379,33 +386,24 @@ void AppStateManager::handleInput(ButtonInput input)
 
 void AppStateManager::displayWifiProvisioning()
 {
-    WifiStatus status = wifiManager.getStatus();
-    String statusMessage = wifiManager.getStatusMessage();
-    Serial.println(statusMessage);
-    Serial.println(WiFi.localIP().toString());
+    WiFiManagerState currentState = wifiManager.getCurrentConnectionState();
+    const char *latestStatus = wifiManager.getLatestStatusMessage();
 
-    switch (status)
+    switch (currentState)
     {
-    case WifiStatus::NOT_CONNECTED:
-    case WifiStatus::WAITING_FOR_SMARTCONFIG:
-        displayManager.displayCenteredWrappedText(statusMessage);
+    case WiFiManagerState::IDLE:
+        displayManager.displayCenteredWrappedText("Initializing WiFi...");
         break;
-    case WifiStatus::SMARTCONFIG_RECEIVED:
-        displayManager.displayCenteredWrappedText(statusMessage);
+    case WiFiManagerState::SMARTCONFIG:
+        displayManager.displayCenteredWrappedText("SmartConfig Mode\nUse app to connect");
         break;
-    case WifiStatus::CONNECTING:
-        displayManager.showLoaderWithText(statusMessage + "\nAttempt: " + String(wifiManager.getConnectionAttempts()));
+    case WiFiManagerState::CONNECTING:
+        displayManager.showLoaderWithText(latestStatus);
         break;
-    case WifiStatus::CONNECTED:
-        displayManager.displayCenteredWrappedText(statusMessage);
-        // Wait for a moment to show the success message
-        delay(2000);
-        setAppState(AppState::CURRENT_TEMPERATURE);
-        break;
-    case WifiStatus::CONNECTION_ATTEMPT_FAILED:
-    case WifiStatus::CONNECTION_LOST:
-        displayManager.displayCenteredWrappedText(statusMessage + "\nPress button to retry");
-        // You might want to check for a button press here to restart provisioning
+    case WiFiManagerState::CONNECTION_FAILED:
+    case WiFiManagerState::DISCONNECTED:
+        displayManager.displayCenteredWrappedText("Disconnected");
+        wifiManager.restartSmartConfig();
         break;
     }
 }

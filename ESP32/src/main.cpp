@@ -43,6 +43,7 @@ DisplayManager *displayManager = nullptr;
 AppStateManager *appStateManager = nullptr;
 ButtonManager *buttonManager = nullptr;
 MenuRouter *menuRouter = nullptr;
+WiFiManager *wifiManager = nullptr;
 
 TwoWire i2cBus(0);
 Settings settings;
@@ -50,61 +51,57 @@ Adafruit_SH1106G display(DisplayConfig::WIDTH, DisplayConfig::HEIGHT, &i2cBus, D
 
 void setup()
 {
-  Serial.begin(115200);
-  i2cBus.begin(Pins::I2C_SDA, Pins::I2C_SCL);
-  i2cBus.setClock(100000);
+    Serial.begin(115200);
+    i2cBus.begin(Pins::I2C_SDA, Pins::I2C_SCL);
+    i2cBus.setClock(100000);
 
-  if (!display.begin(I2CAddresses::DISPLAYADDR, true))
-  {
-    Serial.println(F("SSD1306 allocation failed"));
-    return;
-  }
+    if (!display.begin(I2CAddresses::DISPLAYADDR, true))
+    {
+        Serial.println(F("SSD1306 allocation failed"));
+        return;
+    }
 
-  WiFi.begin(FPSTR(SSID), FPSTR(PASSWORD));
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1000);
-    Serial.println(F("Connecting to WiFi..."));
-  }
-  Serial.println(F("Connected to WiFi"));
-  Serial.print(F("IP address: "));
-  Serial.println(WiFi.localIP());
+    settings.begin();
 
-  settings.begin();
-  ds18b20Sensor = new DS18B20Sensor(Pins::TEMP_SENSOR);
-  ds18b20Sensor->begin();
-  ds18b20Sensor->setTemperatureOffset(settings.getTemperatureCalibration());
+    wifiManager = new WiFiManager(settings);
+    wifiManager->begin();
 
-  tempController = new TemperatureController(*ds18b20Sensor, Pins::RELAY, settings);
-  displayManager = new DisplayManager(display);
+    // Initialize other components
+    ds18b20Sensor = new DS18B20Sensor(Pins::TEMP_SENSOR);
+    ds18b20Sensor->begin();
+    ds18b20Sensor->setTemperatureOffset(settings.getTemperatureCalibration());
 
-  updater = new OTAUpdater(UPDATE_URL, DEVICE_NAME, settings);
-  menuRouter = new MenuRouter();
-  appStateManager = new AppStateManager(*displayManager, *tempController, settings, *updater, *menuRouter);
+    tempController = new TemperatureController(*ds18b20Sensor, Pins::RELAY, settings);
+    displayManager = new DisplayManager(display);
 
-  buttonManager = new ButtonManager(*tempController, *appStateManager);
-  buttonManager->setupButtons();
+    updater = new OTAUpdater(UPDATE_URL, DEVICE_NAME, settings);
+    menuRouter = new MenuRouter();
+    appStateManager = new AppStateManager(*displayManager, *tempController, settings, *updater, *menuRouter);
 
-  Serial.println(F("Initialization complete."));
+    buttonManager = new ButtonManager(*tempController, *appStateManager);
+    buttonManager->setupButtons();
 
-  float setTemp = settings.getSetTemperature();
-  Serial.print(F("Set Temperature: "));
-  Serial.print(setTemp);
-  Serial.println(F(" °C"));
+    Serial.println(F("Initialization complete."));
 
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
-  display.setCursor(0, 0);
-  display.display();
+    float setTemp = settings.getSetTemperature();
+    Serial.print(F("Set Temperature: "));
+    Serial.print(setTemp);
+    Serial.println(F(" °C"));
+
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SH110X_WHITE);
+    display.setCursor(0, 0);
+    display.display();
 }
 
 void loop()
 {
-  buttonManager->tick();
-  appStateManager->tick();
-  tempController->update();
+    wifiManager->update();
+    buttonManager->tick();
+    appStateManager->tick();
+    tempController->update();
 
-  display.clearDisplay();
-  appStateManager->display();
+    display.clearDisplay();
+    appStateManager->display();
 }

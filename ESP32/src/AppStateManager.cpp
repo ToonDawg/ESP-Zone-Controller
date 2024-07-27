@@ -60,7 +60,8 @@ void AppStateManager::initializeMenus()
     menuRouter.createMenu("device_details", "Device Details");
     menuRouter.addMenuItem("device_details", MenuItem("ESP32", ActionType::CHANGE_APP_STATE, [this]()
                                                       { settings.printAllSettings(); }));
-
+    menuRouter.addMenuItem("device_details", MenuItem("WiFi", ActionType::CHANGE_APP_STATE, [this]()
+                                                      { setAppState(AppState::WIFI_PROVISIONING); }));
     menuRouter.navigateToMenu("main");
 }
 
@@ -101,6 +102,9 @@ void AppStateManager::display()
         break;
     case AppState::UPDATE:
         displayUpdate();
+        break;
+    case AppState::WIFI_PROVISIONING:
+        displayManager.showLoaderWithText("Provisioning WiFi...");
         break;
     }
     displayManager.render();
@@ -352,6 +356,15 @@ void AppStateManager::handleInput(ButtonInput input)
         case ButtonInput::SELECT:
             updater.performUpdate();
             break;
+        case ButtonInput::BACK:
+            setAppState(AppState::MENU);
+            break;
+        }
+        break;
+
+    case AppState::WIFI_PROVISIONING:
+        switch (input)
+        {
         case ButtonInput::BACK:
             setAppState(AppState::MENU);
             break;

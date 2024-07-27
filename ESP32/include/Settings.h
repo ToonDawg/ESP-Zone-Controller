@@ -38,6 +38,12 @@ public:
     void setLatestAvailableVersion(const String &version);
     String getLatestAvailableVersion();
 
+    void setWiFiSSID(const String& ssid);
+    String getWiFiSSID();
+
+    void setWiFiPassword(const String& password);
+    String getWiFiPassword();
+
 private:
     Preferences preferences;
 };

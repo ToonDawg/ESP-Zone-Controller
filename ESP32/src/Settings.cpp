@@ -97,6 +97,26 @@ int Settings::getAutoSleepOption()
     return preferences.getInt("auto_sleep", 0);
 }
 
+void Settings::setWiFiSSID(const String& ssid)
+{
+    preferences.putString("wifi_ssid", ssid);
+}
+
+String Settings::getWiFiSSID()
+{
+    return preferences.getString("wifi_ssid", "");
+}
+
+void Settings::setWiFiPassword(const String& password)
+{
+    preferences.putString("wifi_pass", password);
+}
+
+String Settings::getWiFiPassword()
+{
+    return preferences.getString("wifi_pass", "");
+}
+
 void Settings::printAllSettings() {
     Serial.println("Current Settings:");
     Serial.println("--------------------");

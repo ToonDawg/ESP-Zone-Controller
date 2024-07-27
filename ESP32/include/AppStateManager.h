@@ -21,6 +21,7 @@ public:
         CALIBRATE_TEMPERATURE,
         CHECK_FOR_UPDATES,
         UPDATE,
+        WIFI_PROVISIONING,
     };
 
     AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater, MenuRouter &menuRouter);

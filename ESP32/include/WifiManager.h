@@ -1,36 +1,54 @@
-#pragma once
+#ifndef WIFI_MANAGER_H
+#define WIFI_MANAGER_H
 
+#include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiProv.h>
 #include "Settings.h"
+
+enum class WifiState {
+    IDLE,
+    SMART_CONFIG,
+    CONNECTING,
+    CONNECTED,
+    CONNECTION_FAILED
+};
+
+enum class WifiStatus {
+    NOT_CONNECTED,
+    WAITING_FOR_SMARTCONFIG,
+    SMARTCONFIG_RECEIVED,
+    CONNECTING,
+    CONNECTION_ATTEMPT_FAILED,
+    CONNECTED,
+    CONNECTION_LOST
+};
 
 class WiFiManager {
 public:
     WiFiManager(Settings& settings);
     void begin();
     void update();
-    bool isProvisioned() const { return _isProvisioned; }
-    bool isConnected() const { return _isConnected; }
-    void startProvisioning();
-    void stopProvisioning();
-    bool isProvisioning() const { return _isProvisioning; }
-    bool connectToStoredNetwork();
+    WifiStatus getStatus() const;
+    String getStatusMessage() const;
+    int getConnectionAttempts() const;
 
 private:
-    static void wifiEventCallback(arduino_event_t *event);
-    static void provisionEventCallback(arduino_event_t *event, WiFiManager *instance);
-    void handleProvisionEvent(arduino_event_t *event);
-    void connectToWiFi();
-    void updateWiFiDetails();
-    bool checkStoredCredentials();
+    static const unsigned long CONNECTION_TIMEOUT = 30000; // 30 seconds
+    static const int MAX_CONNECTION_ATTEMPTS = 3;
 
-    Settings& _settings;
-    bool _isProvisioned;
-    bool _isConnected;
-    bool _isProvisioning;
+    WifiState state;
+    WifiStatus status;
+    Settings& settings;
+    unsigned long connectionStartTime;
+    int connectionAttempts;
+    String statusMessage;
 
-    static WiFiManager* instance;
-
-    static const char PROGMEM SERVICE_NAME[];
-    static const char PROGMEM POP[];
+    void startSmartConfig();
+    void updateSmartConfig();
+    void updateConnection();
+    bool connectWithStoredCredentials();
+    void saveWifiCredentials(const String& ssid, const String& password);
+    void setStatus(WifiStatus newStatus, const String& message);
 };
+
+#endif // WIFI_MANAGER_H

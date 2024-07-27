@@ -3,13 +3,14 @@
 #include "AppStateManager.h"
 #include "Settings.h"
 
-AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater, MenuRouter &menuRouter)
+AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater, MenuRouter &menuRouter, WiFiManager &wifiManager)
     : currentState(AppState::CURRENT_TEMPERATURE),
       displayManager(displayManager),
       temperatureController(tempController),
       settings(settings),
       updater(updater),
       menuRenderer(displayManager),
+      wifiManager(wifiManager),
       lastActivityTime(0),
       lastSetTempAdjustmentTime(0)
 {
@@ -27,7 +28,6 @@ void AppStateManager::initializeMenus()
                                                  { settings.setMotorDirection(MotorDirection::Normal); }));
     menuRouter.addMenuItem("motor_dir", MenuItem("Reversed", ActionType::EXECUTE_CALLBACK, [this]()
                                                  { settings.setMotorDirection(MotorDirection::Reversed); }));
-
     menuRouter.addMenuItem("settings", MenuItem("Temp. Unit", ActionType::OPEN_SUBMENU, "temp_unit"));
     menuRouter.createMenu("temp_unit", "Temperature Unit");
     menuRouter.addMenuItem("temp_unit", MenuItem("Celsius", ActionType::EXECUTE_CALLBACK, [this]()
@@ -48,20 +48,20 @@ void AppStateManager::initializeMenus()
                                                   { settings.setAutoSleepOption(300000); }));
     menuRouter.addMenuItem("auto_sleep", MenuItem("30m", ActionType::EXECUTE_CALLBACK, [this]()
                                                   { settings.setAutoSleepOption(1800000); }));
-
     menuRouter.addMenuItem("settings", MenuItem("About", ActionType::OPEN_SUBMENU, "about"));
     menuRouter.createMenu("about", "About");
     menuRouter.addMenuItem("about", MenuItem("Check for updates", ActionType::CHANGE_APP_STATE, [this]()
                                              { setAppState(AppState::CHECK_FOR_UPDATES); }));
     menuRouter.addMenuItem("about", MenuItem("Update", ActionType::CHANGE_APP_STATE, [this]()
                                              { setAppState(AppState::UPDATE); }));
+    menuRouter.addMenuItem("about", MenuItem("WiFi", ActionType::CHANGE_APP_STATE, [this]()
+                                             { WiFi.disconnect();
+                                             settings.setWiFiPassword("");
+                                             settings.setWiFiSSID("");
+                                             setAppState(AppState::WIFI_PROVISIONING); }));
+    menuRouter.addMenuItem("about", MenuItem("Device Details", ActionType::CHANGE_APP_STATE, [this]()
+                                             { settings.printAllSettings(); }));
 
-    menuRouter.addMenuItem("about", MenuItem("Device Details", ActionType::OPEN_SUBMENU, "device_details"));
-    menuRouter.createMenu("device_details", "Device Details");
-    menuRouter.addMenuItem("device_details", MenuItem("ESP32", ActionType::CHANGE_APP_STATE, [this]()
-                                                      { settings.printAllSettings(); }));
-    menuRouter.addMenuItem("device_details", MenuItem("WiFi", ActionType::CHANGE_APP_STATE, [this]()
-                                                      { setAppState(AppState::WIFI_PROVISIONING); }));
     menuRouter.navigateToMenu("main");
 }
 
@@ -104,7 +104,7 @@ void AppStateManager::display()
         displayUpdate();
         break;
     case AppState::WIFI_PROVISIONING:
-        displayManager.showLoaderWithText("Provisioning WiFi...");
+        displayWifiProvisioning();
         break;
     }
     displayManager.render();
@@ -137,6 +137,7 @@ void AppStateManager::displayCurrentTemperature()
 
 void AppStateManager::displayCheckForUpdates()
 {
+    Serial.println("Checking for updates...");
     displayManager.displayMenuTitle("Check for updates");
     if (shouldCheckForUpdates())
     {
@@ -163,9 +164,10 @@ void AppStateManager::displayCheckForUpdates()
 
 bool AppStateManager::shouldCheckForUpdates()
 {
+    Serial.println("Checking for updates...");
     unsigned long lastCheck = settings.getLastUpdateCheck();
     unsigned long currentTime = millis();
-    Serial.println( "Last check: " + lastCheck);
+    Serial.println("Last check: " + lastCheck);
 
     return (currentTime - lastCheck) > 600000 || lastCheck == 0;
 }
@@ -370,8 +372,40 @@ void AppStateManager::handleInput(ButtonInput input)
             break;
         }
         break;
-
     }
 
     display();
+}
+
+void AppStateManager::displayWifiProvisioning()
+{
+    WifiStatus status = wifiManager.getStatus();
+    String statusMessage = wifiManager.getStatusMessage();
+    Serial.println(statusMessage);
+    Serial.println(WiFi.localIP().toString());
+
+    switch (status)
+    {
+    case WifiStatus::NOT_CONNECTED:
+    case WifiStatus::WAITING_FOR_SMARTCONFIG:
+        displayManager.displayCenteredWrappedText(statusMessage);
+        break;
+    case WifiStatus::SMARTCONFIG_RECEIVED:
+        displayManager.displayCenteredWrappedText(statusMessage);
+        break;
+    case WifiStatus::CONNECTING:
+        displayManager.showLoaderWithText(statusMessage + "\nAttempt: " + String(wifiManager.getConnectionAttempts()));
+        break;
+    case WifiStatus::CONNECTED:
+        displayManager.displayCenteredWrappedText(statusMessage);
+        // Wait for a moment to show the success message
+        delay(2000);
+        setAppState(AppState::CURRENT_TEMPERATURE);
+        break;
+    case WifiStatus::CONNECTION_ATTEMPT_FAILED:
+    case WifiStatus::CONNECTION_LOST:
+        displayManager.displayCenteredWrappedText(statusMessage + "\nPress button to retry");
+        // You might want to check for a button press here to restart provisioning
+        break;
+    }
 }

@@ -1,126 +1,108 @@
+#include <WiFi.h>
 #include "WiFiManager.h"
 
-const char PROGMEM WiFiManager::SERVICE_NAME[] = "TempControl_PROV";
-const char PROGMEM WiFiManager::POP[] = "abcd1234";
-
-WiFiManager* WiFiManager::instance = nullptr;
-
 WiFiManager::WiFiManager(Settings& settings) 
-    : _settings(settings), _isProvisioned(false), _isConnected(false), _isProvisioning(false) {
-    instance = this;
-}
+    : state(WifiState::IDLE), status(WifiStatus::NOT_CONNECTED), settings(settings), connectionAttempts(0) {}
 
 void WiFiManager::begin() {
-    WiFi.onEvent(wifiEventCallback);
-    _isProvisioned = checkStoredCredentials();
+    if (connectWithStoredCredentials()) {
+        setStatus(WifiStatus::CONNECTING, "Connecting with stored credentials...");
+    } else {
+        startSmartConfig();
+    }
 }
 
 void WiFiManager::update() {
-    if (_isProvisioned && !_isConnected) {
-        connectToWiFi();
-    }
-    _isConnected = WiFi.isConnected();
-
-    static unsigned long lastReconnectAttempt = 0;
-    const unsigned long reconnectInterval = 30000;
-
-    if (!_isConnected && millis() - lastReconnectAttempt > reconnectInterval) {
-        Serial.println("Attempting to reconnect to WiFi...");
-        connectToWiFi();
-        lastReconnectAttempt = millis();
-    }
-}
-
-void WiFiManager::startProvisioning() {
-    if (!_isProvisioning) {
-        Serial.println("Starting WiFi provisioning");
-        WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, 
-                                WIFI_PROV_SECURITY_1, POP, SERVICE_NAME);
-        
-        WiFi.onEvent([](arduino_event_t *event) {
-            provisionEventCallback(event, instance);
-        }, ARDUINO_EVENT_PROV_START);
-
-        _isProvisioning = true;
-    }
-}
-
-void WiFiManager::stopProvisioning() {
-    if (_isProvisioning) {
-        Serial.println("Stopping WiFi provisioning");
-        WiFiProv.stopProvision();
-        _isProvisioning = false;
-    }
-}
-
-bool WiFiManager::connectToStoredNetwork() {
-    if (checkStoredCredentials()) {
-        connectToWiFi();
-        return true;
-    }
-    return false;
-}
-
-void WiFiManager::wifiEventCallback(arduino_event_t *event) {
-    if (instance) {
-        switch (event->event_id) {
-            case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-                instance->_isConnected = true;
-                instance->updateWiFiDetails();
-                Serial.println("Connected to WiFi. IP: " + WiFi.localIP().toString());
-                break;
-            case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-                instance->_isConnected = false;
-                Serial.println("Disconnected from WiFi");
-                break;
-            default:
-                break;
-        }
-    }
-}
-
-void WiFiManager::provisionEventCallback(arduino_event_t *event, WiFiManager *instance) {
-    if (instance) {
-        instance->handleProvisionEvent(event);
-    }
-}
-
-void WiFiManager::handleProvisionEvent(arduino_event_t *event) {
-    switch (event->event_id) {
-        case ARDUINO_EVENT_PROV_CRED_RECV:
-            _isProvisioned = true;
-            Serial.println("Provisioning credentials received");
+    switch (state) {
+        case WifiState::SMART_CONFIG:
+            updateSmartConfig();
             break;
-        case ARDUINO_EVENT_PROV_END:
-            _isProvisioning = false;
-            Serial.println("Provisioning ended");
+        case WifiState::CONNECTING:
+            updateConnection();
+            break;
+        case WifiState::CONNECTED:
+            if (WiFi.status() != WL_CONNECTED) {
+                setStatus(WifiStatus::CONNECTION_LOST, "WiFi connection lost. Retrying...");
+                connectWithStoredCredentials();
+            }
             break;
         default:
             break;
     }
 }
 
-void WiFiManager::connectToWiFi() {
-    Serial.println("Attempting to connect to WiFi");
-    WiFi.begin();
+void WiFiManager::startSmartConfig() {
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.beginSmartConfig();
+    state = WifiState::SMART_CONFIG;
+    setStatus(WifiStatus::WAITING_FOR_SMARTCONFIG, "Waiting for SmartConfig...");
 }
 
-void WiFiManager::updateWiFiDetails() {
-    _settings.setWiFiSSID(WiFi.SSID());
-    _settings.setWiFiPassword(WiFi.psk());
-    Serial.println("WiFi details updated in settings");
+void WiFiManager::updateSmartConfig() {
+    if (WiFi.smartConfigDone()) {
+        setStatus(WifiStatus::SMARTCONFIG_RECEIVED, "SmartConfig credentials received!");
+        String ssid = WiFi.SSID();
+        String password = WiFi.psk();
+        saveWifiCredentials(ssid, password);
+        state = WifiState::CONNECTING;
+        WiFi.begin(ssid.c_str(), password.c_str());
+        connectionStartTime = millis();
+        connectionAttempts = 1;
+        setStatus(WifiStatus::CONNECTING, "Attempting to connect...");
+    }
 }
 
-bool WiFiManager::checkStoredCredentials() {
-    String ssid = _settings.getWiFiSSID();
-    String password = _settings.getWiFiPassword();
+void WiFiManager::updateConnection() {
+    if (WiFi.status() == WL_CONNECTED) {
+        state = WifiState::CONNECTED;
+        setStatus(WifiStatus::CONNECTED, "WiFi connected successfully!");
+    } else if (millis() - connectionStartTime > CONNECTION_TIMEOUT) {
+        if (connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
+            connectionAttempts++;
+            WiFi.begin(settings.getWiFiSSID().c_str(), settings.getWiFiPassword().c_str());
+            connectionStartTime = millis();
+            setStatus(WifiStatus::CONNECTING, "Connecting... Attempt " + String(connectionAttempts));
+        } else {
+            state = WifiState::CONNECTION_FAILED;
+            setStatus(WifiStatus::CONNECTION_ATTEMPT_FAILED, "Failed to connect");
+            startSmartConfig();
+        }
+    }
+}
+
+bool WiFiManager::connectWithStoredCredentials() {
+    String ssid = settings.getWiFiSSID();
+    String password = settings.getWiFiPassword();
     
     if (ssid.length() > 0 && password.length() > 0) {
-        Serial.println("Stored WiFi credentials found");
         WiFi.begin(ssid.c_str(), password.c_str());
+        connectionStartTime = millis();
+        state = WifiState::CONNECTING;
+        connectionAttempts = 1;
+        setStatus(WifiStatus::CONNECTING, "Connecting with stored credentials...");
         return true;
     }
-    
-    Serial.println("No stored WiFi credentials found");
     return false;
+}
+
+void WiFiManager::saveWifiCredentials(const String& ssid, const String& password) {
+    settings.setWiFiSSID(ssid);
+    settings.setWiFiPassword(password);
+}
+
+void WiFiManager::setStatus(WifiStatus newStatus, const String& message) {
+    status = newStatus;
+    statusMessage = message;
+}
+
+WifiStatus WiFiManager::getStatus() const {
+    return status;
+}
+
+String WiFiManager::getStatusMessage() const {
+    return statusMessage;
+}
+
+int WiFiManager::getConnectionAttempts() const {
+    return connectionAttempts;
 }

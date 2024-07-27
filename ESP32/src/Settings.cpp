@@ -153,5 +153,13 @@ void Settings::printAllSettings() {
     Serial.print("Auto Sleep Option: ");
     Serial.println(getAutoSleepOption());
 
+    // WiFi SSID
+    Serial.print("WiFi SSID: ");
+    Serial.println(getWiFiSSID());
+
+    // WiFi Password
+    Serial.print("WiFi Password: ");
+    Serial.println(getWiFiPassword());
+
     Serial.println("--------------------");
 }

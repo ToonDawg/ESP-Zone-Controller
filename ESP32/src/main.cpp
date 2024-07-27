@@ -7,10 +7,8 @@
 #include "OTAUpdater.h"
 #include "DS18B20Sensor.h"
 #include "MenuRouter.h"
+#include "WifiManager.h"
 
-// Use PROGMEM for constant strings
-const char PROGMEM SSID[] = "Asus";
-const char PROGMEM PASSWORD[] = "REDACTED";
 const char UPDATE_URL[] = "https://test-esp32-firmware-updates.s3.amazonaws.com";
 const char DEVICE_NAME[] = "ACMate";
 
@@ -76,7 +74,7 @@ void setup()
 
     updater = new OTAUpdater(UPDATE_URL, DEVICE_NAME, settings);
     menuRouter = new MenuRouter();
-    appStateManager = new AppStateManager(*displayManager, *tempController, settings, *updater, *menuRouter);
+    appStateManager = new AppStateManager(*displayManager, *tempController, settings, *updater, *menuRouter, *wifiManager);
 
     buttonManager = new ButtonManager(*tempController, *appStateManager);
     buttonManager->setupButtons();

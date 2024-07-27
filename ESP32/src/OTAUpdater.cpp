@@ -13,6 +13,8 @@ String OTAUpdater::getLatestVersion()
     {
         Serial.println("WiFi not connected. Cannot check for latest version.");
         return "";
+    } else {
+        Serial.println("Wifi Connected");
     }
 
     String versions_url = String(_base_url) + "/" + _device_name + "/versions.json";

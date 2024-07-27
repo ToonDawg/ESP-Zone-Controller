@@ -7,6 +7,7 @@
 #include "OTAUpdater.h"
 #include "MenuRouter.h"
 #include "MenuRenderer.h"
+#include "WifiManager.h"
 
 class AppStateManager
 {
@@ -24,7 +25,7 @@ public:
         WIFI_PROVISIONING,
     };
 
-    AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater, MenuRouter &menuRouter);
+    AppStateManager(DisplayManager &displayManager, TemperatureController &tempController, Settings &settings, OTAUpdater &updater, MenuRouter &menuRouter, WiFiManager &wifiManager);
 
     void setAppState(AppState state);
     AppState getAppState() const;
@@ -49,6 +50,7 @@ private:
     OTAUpdater &updater;
     MenuRouter menuRouter;
     MenuRenderer menuRenderer;
+    WiFiManager &wifiManager;
 
     unsigned long lastActivityTime;
     unsigned long lastSetTempAdjustmentTime;
@@ -68,4 +70,5 @@ private:
     void recordAdjustmentTime();
     void displayUpdate();
     void displayTemperatureCalibration();
+    void displayWifiProvisioning();
 };

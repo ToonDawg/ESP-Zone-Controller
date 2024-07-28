@@ -14,7 +14,7 @@ TemperatureController::TemperatureController(TemperatureSensor &sensor, int rela
     updateRelayState();
 }
 
-void TemperatureController::update()
+void TemperatureController::tick()
 {
     unsigned long currentTime = millis();
 

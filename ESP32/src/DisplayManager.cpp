@@ -89,8 +89,6 @@ String formatTemperature(float temperature)
 
 void DisplayManager::displayTemperature(float temperature, tImage tempIcon)
 {
-    display.clearDisplay();
-
     TextStyle tempStyle(FontSize::LARGE, MONOOLED_WHITE, TextAlignment::CENTER);
     drawText(formatTemperature(temperature), 0, TEMPERATURE_FONT_HEIGHT, tempStyle);
 
@@ -122,7 +120,7 @@ void DisplayManager::displayBottomCenterText(const String &text)
     drawText(text, 0, display.height() - DISPLAY_SIDE_MARGIN, style);
 }
 
-void DisplayManager::displayOff()
+void DisplayManager::clearDisplay()
 {
     display.clearDisplay();
 }

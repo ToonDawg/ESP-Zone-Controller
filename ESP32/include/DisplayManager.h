@@ -42,7 +42,7 @@ public:
     void displayIconBottomRight(const tImage &icon);
     void displayIconBottomMiddle(const tImage &icon);
     void displayBottomCenterText(const String &text);
-    void displayOff();
+    void clearDisplay();
     void render();
     void displayCenteredWrappedText(const String &text);
     void displaySettingsMenu(const Menu &menu);

@@ -66,9 +66,9 @@ void AppStateManager::initializeMenus()
                                             { wifiManager.disconnectAndClearCredentials(); }));
     menuRouter.addMenuItem("wifi", MenuItem("Details", ActionType::OPEN_SUBMENU, "wifi_details"));
     menuRouter.createMenu("wifi_details", "WiFi Details");
-    menuRouter.addMenuItem("wifi_details", MenuItem( wifiManager.getIPAddress(), ActionType::DISPLAY_VALUE, [this]() {}));
-    menuRouter.addMenuItem("wifi_details", MenuItem( WiFi.macAddress(), ActionType::DISPLAY_VALUE, [this]() {}));
-    menuRouter.addMenuItem("wifi_details", MenuItem( wifiManager.getSSID(), ActionType::DISPLAY_VALUE, [this]() {}));
+    menuRouter.addMenuItem("wifi_details", MenuItem(wifiManager.getIPAddress(), ActionType::DISPLAY_VALUE, [this]() {}));
+    menuRouter.addMenuItem("wifi_details", MenuItem(WiFi.macAddress(), ActionType::DISPLAY_VALUE, [this]() {}));
+    menuRouter.addMenuItem("wifi_details", MenuItem(wifiManager.getSSID(), ActionType::DISPLAY_VALUE, [this]() {}));
 
     menuRouter.navigateToMenu("main");
 }
@@ -85,6 +85,7 @@ AppStateManager::AppState AppStateManager::getAppState() const
 
 void AppStateManager::display()
 {
+    displayManager.clearDisplay();
     switch (currentState)
     {
     case AppState::CURRENT_TEMPERATURE:
@@ -141,7 +142,7 @@ void AppStateManager::displayCurrentTemperature()
     displayManager.displayTemperature(temperatureController.getStatus().currentTemperature, tempIcon);
     displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
     displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
-    
+
     if (wifiManager.isWiFiConnected())
     {
         displayManager.displayIconBottomMiddle(wifiIcon);
@@ -197,7 +198,7 @@ void AppStateManager::displayTemperatureCalibration()
 
 void AppStateManager::displayOff()
 {
-    displayManager.displayOff();
+    displayManager.clearDisplay();
 }
 
 void AppStateManager::handleSetTemperatureTimeout()
@@ -396,8 +397,21 @@ void AppStateManager::displayWifiProvisioning()
     case WiFiManagerState::IDLE:
         displayManager.displayCenteredWrappedText("Initializing WiFi...");
         break;
+    case WiFiManagerState::CONNECTED:
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            wifiManager.updateStateAndNotify(WiFiManagerState::CONNECTION_FAILED, "WiFi lost. Retrying...");
+            wifiManager.connectUsingStoredCredentials();
+        }
+        break;
     case WiFiManagerState::SMARTCONFIG:
         displayManager.displayCenteredWrappedText("Scanning for APP...");
+        if (WiFi.smartConfigDone())
+        {
+            wifiManager.updateStateAndNotify(WiFiManagerState::CONNECTING, "Details received. Connecting...");
+            wifiManager.setConnectionStartTime(millis());
+            wifiManager.setConnectionAttempts(1);
+        }
         break;
     case WiFiManagerState::CONNECTING:
         displayManager.showLoaderWithText(latestStatus);

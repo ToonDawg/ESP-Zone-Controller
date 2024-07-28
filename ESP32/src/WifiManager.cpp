@@ -17,29 +17,6 @@ void WiFiManager::begin() {
     }
 }
 
-void WiFiManager::processConnectionState() {
-    switch (state) {
-        case WiFiManagerState::CONNECTING:
-            handleConnectionAttempt();
-            break;
-        case WiFiManagerState::CONNECTED:
-            if (WiFi.status() != WL_CONNECTED) {
-                updateStateAndNotify(WiFiManagerState::CONNECTION_FAILED, "WiFi lost. Retrying...");
-                connectUsingStoredCredentials();
-            }
-            break;
-        case WiFiManagerState::SMARTCONFIG:
-            if (WiFi.smartConfigDone()) {
-                updateStateAndNotify(WiFiManagerState::CONNECTING, "SmartConfig received. Connecting...");
-                connectionStartTime = millis();
-                connectionAttempts = 1;
-            }
-            break;
-        default:
-            break;
-    }
-}
-
 void WiFiManager::initiateSmartConfig() {
     updateStateAndNotify(WiFiManagerState::SMARTCONFIG, "Starting SmartConfig...");
     WiFi.beginSmartConfig();

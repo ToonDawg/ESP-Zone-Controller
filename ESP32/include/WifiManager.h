@@ -20,7 +20,6 @@ class WiFiManager
 public:
     WiFiManager(Settings &settings);
     void begin();
-    void processConnectionState();
     WiFiManagerState getCurrentConnectionState() const { return state; }
     const char *getLatestStatusMessage() const { return statusMessage; }
     bool isWiFiConnected() const { return state == WiFiManagerState::CONNECTED; }
@@ -29,7 +28,10 @@ public:
     String getSSID() const;
     String getIPAddress() const;
     void handleConnectionAttempt();
-
+    void updateStateAndNotify(WiFiManagerState newState, const char *message);
+    void connectUsingStoredCredentials();
+    void setConnectionStartTime(unsigned long time) { connectionStartTime = time; }
+    void setConnectionAttempts(uint8_t attempts) { connectionAttempts = attempts; }
 
 private:
     static WiFiManager *instance;
@@ -40,11 +42,7 @@ private:
     unsigned long connectionStartTime;
     uint8_t connectionAttempts;
     const char *statusMessage;
-
     void initiateSmartConfig();
-    void connectUsingStoredCredentials();
-    void updateStateAndNotify(WiFiManagerState newState, const char *message);
-
     static void handleWiFiStateChange(WiFiEvent_t event);
 };
 

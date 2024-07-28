@@ -12,7 +12,6 @@
 const char UPDATE_URL[] = "https://test-esp32-firmware-updates.s3.amazonaws.com";
 const char DEVICE_NAME[] = "ACMate";
 
-// Use namespaces to group related constants
 namespace Pins
 {
   constexpr uint8_t I2C_SDA = 5;
@@ -64,7 +63,6 @@ void setup()
     wifiManager = new WiFiManager(settings);
     wifiManager->begin();
 
-    // Initialize other components
     ds18b20Sensor = new DS18B20Sensor(Pins::TEMP_SENSOR);
     ds18b20Sensor->begin();
     ds18b20Sensor->setTemperatureOffset(settings.getTemperatureCalibration());
@@ -97,8 +95,6 @@ void loop()
 {
     buttonManager->tick();
     appStateManager->tick();
-    tempController->update();
-
-    display.clearDisplay();
+    tempController->tick();
     appStateManager->display();
 }

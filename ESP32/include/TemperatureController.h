@@ -10,7 +10,7 @@ class TemperatureController
 public:
     TemperatureController(TemperatureSensor &sensor, int relayPin, Settings &settings);
 
-    void update();
+    void tick();
     TemperatureStatus getStatus() const;
 
     void adjustSetTemperature(float delta);

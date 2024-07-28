@@ -63,7 +63,7 @@ void AppStateManager::initializeMenus()
     menuRouter.addMenuItem("wifi", MenuItem("Connect", ActionType::CHANGE_APP_STATE, [this]()
                                             { setAppState(AppState::WIFI_PROVISIONING); }));
     menuRouter.addMenuItem("wifi", MenuItem("Disconnect", ActionType::EXECUTE_CALLBACK, [this]()
-                                            { wifiManager.disconnectAndClearCredentials(); }));
+                                            { wifiManager.disconnect(); }));
     menuRouter.addMenuItem("wifi", MenuItem("Details", ActionType::OPEN_SUBMENU, "wifi_details"));
     menuRouter.createMenu("wifi_details", "WiFi Details");
     menuRouter.addMenuItem("wifi_details", MenuItem(wifiManager.getIPAddress(), ActionType::DISPLAY_VALUE, [this]() {}));
@@ -143,7 +143,7 @@ void AppStateManager::displayCurrentTemperature()
     displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
     displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
 
-    if (wifiManager.isWiFiConnected())
+    if (wifiManager.isConnected())
     {
         displayManager.displayIconBottomMiddle(wifiIcon);
     }
@@ -389,39 +389,33 @@ void AppStateManager::handleInput(ButtonInput input)
 
 void AppStateManager::displayWifiProvisioning()
 {
-    WiFiManagerState currentState = wifiManager.getCurrentConnectionState();
-    const char *latestStatus = wifiManager.getLatestStatusMessage();
+     {
+        wifiManager.update();
+        WiFiManager::State currentState = wifiManager.getState();
+        const char* latestStatus = wifiManager.getStatusMessage();
 
-    switch (currentState)
-    {
-    case WiFiManagerState::IDLE:
-        wifiManager.initiateSmartConfig();
-        wifiManager.updateStateAndNotify(WiFiManagerState::SMARTCONFIG, "Initialising...");
-        break;
-    case WiFiManagerState::CONNECTED:
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            wifiManager.updateStateAndNotify(WiFiManagerState::CONNECTION_FAILED, "WiFi lost. Retrying...");
-            wifiManager.connectUsingStoredCredentials();
+        switch (currentState) {
+            case WiFiManager::State::IDLE:
+                wifiManager.startSmartConfig();
+                displayManager.displayCenteredWrappedText("Initializing SmartConfig...");
+                break;
+
+            case WiFiManager::State::CONNECTING:
+                displayManager.showLoaderWithText(latestStatus);
+                break;
+
+            case WiFiManager::State::CONNECTED:
+                if (!wifiManager.isConnected()) {
+                    wifiManager.disconnect();  // Force a disconnect to trigger reconnection
+                } else {
+                    displayManager.displayCenteredWrappedText("Connected");
+                    // Perform any actions needed when connected
+                }
+                break;
+
+            case WiFiManager::State::SMARTCONFIG:
+                displayManager.displayCenteredWrappedText("Scanning for APP...");
+                break;
         }
-        break;
-    case WiFiManagerState::SMARTCONFIG:
-        displayManager.displayCenteredWrappedText("Scanning for APP...");
-        if (WiFi.smartConfigDone())
-        {
-            wifiManager.updateStateAndNotify(WiFiManagerState::CONNECTING, "Details received. Connecting...");
-            wifiManager.setConnectionStartTime(millis());
-            wifiManager.setConnectionAttempts(1);
-        }
-        break;
-    case WiFiManagerState::CONNECTING:
-        displayManager.showLoaderWithText(latestStatus);
-        wifiManager.handleConnectionAttempt();
-        break;
-    case WiFiManagerState::CONNECTION_FAILED:
-    case WiFiManagerState::DISCONNECTED:
-        displayManager.displayCenteredWrappedText("Disconnected");
-        wifiManager.restartSmartConfig();
-        break;
     }
 }

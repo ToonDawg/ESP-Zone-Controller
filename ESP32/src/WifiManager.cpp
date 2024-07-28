@@ -1,121 +1,89 @@
 #include "WifiManager.h"
 
-WiFiManager *WiFiManager::instance = nullptr;
-
 WiFiManager::WiFiManager(Settings &settings)
-    : state(WiFiManagerState::IDLE), settings(settings), connectionAttempts(0)
+    : state(State::IDLE), settings(settings), connectionAttempts(0)
 {
-    instance = this;
 }
 
 void WiFiManager::begin()
 {
-    WiFi.onEvent(handleWiFiStateChange);
-
-    if (settings.getWiFiSSID()[0] != '\0' && settings.getWiFiPassword()[0] != '\0')
+    if (!settings.getWiFiSSID().isEmpty() && !settings.getWiFiPassword().isEmpty())
     {
-        connectUsingStoredCredentials();
+        connectToStoredNetwork();
     }
 }
 
-void WiFiManager::initiateSmartConfig()
+void WiFiManager::update()
 {
-    updateStateAndNotify(WiFiManagerState::SMARTCONFIG, "Starting SmartConfig...");
-    WiFi.mode(WIFI_AP_STA);
-    WiFi.beginSmartConfig();
-}
-
-void WiFiManager::connectUsingStoredCredentials()
-{
-    updateStateAndNotify(WiFiManagerState::CONNECTING, "Connecting to stored network...");
-    WiFi.begin(settings.getWiFiSSID(), settings.getWiFiPassword());
-    connectionStartTime = millis();
-    connectionAttempts = 1;
-}
-
-void WiFiManager::handleConnectionAttempt()
-{
-    if (WiFi.status() == WL_CONNECTED)
+    handleConnection();
+    
+    if (state == State::SMARTCONFIG && WiFi.smartConfigDone())
     {
+        setState(State::CONNECTED, "SmartConfig successful");
         settings.setWiFiSSID(WiFi.SSID());
         settings.setWiFiPassword(WiFi.psk());
-        updateStateAndNotify(WiFiManagerState::CONNECTED, "WiFi connected successfully!");
-    }
-    else if (millis() - connectionStartTime > CONNECTION_TIMEOUT)
-    {
-        if (connectionAttempts < MAX_CONNECTION_ATTEMPTS)
-        {
-            connectionAttempts++;
-            WiFi.begin(settings.getWiFiSSID(), settings.getWiFiPassword());
-            connectionStartTime = millis();
-            char attemptMsg[32];
-            snprintf_P(attemptMsg, sizeof(attemptMsg), PSTR("Connecting... Attempt %d"), connectionAttempts);
-            updateStateAndNotify(WiFiManagerState::CONNECTING, attemptMsg);
-        }
-        else
-        {
-            updateStateAndNotify(WiFiManagerState::CONNECTION_FAILED, "Failed to connect. Starting SmartConfig...");
-            initiateSmartConfig();
-        }
     }
 }
 
-void WiFiManager::updateStateAndNotify(WiFiManagerState newState, const char *message)
+void WiFiManager::setState(State newState, const char *message)
 {
     state = newState;
     statusMessage = message;
     Serial.println(message);
 }
 
-void WiFiManager::handleWiFiStateChange(WiFiEvent_t event)
+void WiFiManager::connectToStoredNetwork()
 {
-    if (!instance)
-    {
-        Serial.println(F("Error: WiFiManager instance not set"));
-        return;
-    }
+    WiFi.begin(settings.getWiFiSSID().c_str(), settings.getWiFiPassword().c_str());
+    connectionStartTime = millis();
+    connectionAttempts = 1;
+    setState(State::CONNECTING, "Connecting to stored network...");
+}
 
-    switch (event)
+void WiFiManager::handleConnection()
+{
+    if (state == State::CONNECTING)
     {
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-        Serial.print(F("Connected IP address: "));
-        Serial.println(WiFi.localIP());
-        instance->updateStateAndNotify(WiFiManagerState::CONNECTED, "WiFi connected successfully!");
-        break;
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        Serial.println(F("Disconnected from WiFi network"));
-        instance->updateStateAndNotify(WiFiManagerState::CONNECTING, "Reconnecting...");
-        break;
-    case ARDUINO_EVENT_SC_SEND_ACK_DONE:
-        Serial.println(F("SmartConfig: Ack sent"));
-        break;
-    default:
-        break;
+        if (isConnected())
+        {
+            setState(State::CONNECTED, "WiFi connected successfully!");
+            Serial.printf("Connected to %s with IP address: %s\n", getSSID().c_str(), getIPAddress().c_str());
+        }
+        else if (millis() - connectionStartTime > CONNECTION_TIMEOUT)
+        {
+            if (connectionAttempts < MAX_CONNECTION_ATTEMPTS)
+            {
+                connectionAttempts++;
+                WiFi.begin(settings.getWiFiSSID().c_str(), settings.getWiFiPassword().c_str());
+                connectionStartTime = millis();
+                char attemptMsg[32];
+                snprintf(attemptMsg, sizeof(attemptMsg), "Connecting... Attempt %d", connectionAttempts);
+                setState(State::CONNECTING, attemptMsg);
+            }
+            else
+            {
+                startSmartConfig();
+            }
+        }
+    }
+    else if (state == State::CONNECTED && !isConnected())
+    {
+        setState(State::CONNECTING, "WiFi disconnected. Reconnecting...");
+        connectToStoredNetwork();
     }
 }
 
-void WiFiManager::disconnectAndClearCredentials()
+void WiFiManager::startSmartConfig()
 {
-    WiFi.disconnect(false, true);
+    setState(State::SMARTCONFIG, "Starting SmartConfig...");
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.beginSmartConfig();
+}
 
+void WiFiManager::disconnect()
+{
+    WiFi.disconnect(true, true);
     settings.setWiFiSSID("");
     settings.setWiFiPassword("");
-
-    updateStateAndNotify(WiFiManagerState::DISCONNECTED, "WiFi disconnected");
-}
-
-void WiFiManager::restartSmartConfig()
-{
-    disconnectAndClearCredentials();
-    initiateSmartConfig();
-}
-
-String WiFiManager::getSSID() const
-{
-    return WiFi.SSID();
-}
-
-String WiFiManager::getIPAddress() const
-{
-    return WiFi.localIP().toString();
+    setState(State::IDLE, "WiFi disconnected");
 }

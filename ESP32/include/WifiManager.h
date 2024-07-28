@@ -5,45 +5,41 @@
 #include <WiFi.h>
 #include "Settings.h"
 
-enum class WiFiManagerState : uint8_t
-{
-    IDLE,
-    SMARTCONFIG,
-    CONNECTING,
-    CONNECTED,
-    CONNECTION_FAILED,
-    DISCONNECTED
-};
-
 class WiFiManager
 {
 public:
+    enum class State : uint8_t
+    {
+        IDLE,
+        CONNECTING,
+        CONNECTED,
+        SMARTCONFIG
+    };
+
     WiFiManager(Settings &settings);
     void begin();
-    WiFiManagerState getCurrentConnectionState() const { return state; }
-    const char *getLatestStatusMessage() const { return statusMessage; }
-    bool isWiFiConnected() const { return state == WiFiManagerState::CONNECTED; }
-    void disconnectAndClearCredentials();
-    void restartSmartConfig();
-    String getSSID() const;
-    String getIPAddress() const;
-    void handleConnectionAttempt();
-    void updateStateAndNotify(WiFiManagerState newState, const char *message);
-    void connectUsingStoredCredentials();
-    void setConnectionStartTime(unsigned long time) { connectionStartTime = time; }
-    void setConnectionAttempts(uint8_t attempts) { connectionAttempts = attempts; }
-    void initiateSmartConfig();
+    void update();
+    State getState() const { return state; }
+    const char *getStatusMessage() const { return statusMessage; }
+    bool isConnected() const { return WiFi.status() == WL_CONNECTED; }
+    void disconnect();
+    void startSmartConfig();
+    String getSSID() const { return WiFi.SSID(); }
+    String getIPAddress() const { return WiFi.localIP().toString(); }
 
 private:
-    static WiFiManager *instance;
     static constexpr unsigned long CONNECTION_TIMEOUT = 20000;
     static constexpr int MAX_CONNECTION_ATTEMPTS = 3;
-    WiFiManagerState state;
+
+    State state;
     Settings &settings;
     unsigned long connectionStartTime;
     uint8_t connectionAttempts;
     const char *statusMessage;
-    static void handleWiFiStateChange(WiFiEvent_t event);
+
+    void setState(State newState, const char *message);
+    void connectToStoredNetwork();
+    void handleConnection();
 };
 
 #endif // WIFI_MANAGER_H

@@ -25,15 +25,15 @@ void AppStateManager::initializeMenus()
                                                 { setAppState(AppState::CALIBRATE_TEMPERATURE); }));
     menuRouter.addMenuItem("settings", MenuItem("Motor Direction", ActionType::OPEN_SUBMENU, "motor_dir"));
     menuRouter.createMenu("motor_dir", "Motor Direction");
-    menuRouter.addMenuItem("motor_dir", MenuItem("Normal", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("motor_dir", MenuItem("Normal", ActionType::SELECT_OPTION, [this]()
                                                  { settings.setMotorDirection(MotorDirection::Normal); }));
-    menuRouter.addMenuItem("motor_dir", MenuItem("Reversed", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("motor_dir", MenuItem("Reversed", ActionType::SELECT_OPTION, [this]()
                                                  { settings.setMotorDirection(MotorDirection::Reversed); }));
     menuRouter.addMenuItem("settings", MenuItem("Temp. Unit", ActionType::OPEN_SUBMENU, "temp_unit"));
     menuRouter.createMenu("temp_unit", "Temperature Unit");
-    menuRouter.addMenuItem("temp_unit", MenuItem("Celsius", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("temp_unit", MenuItem("Celsius", ActionType::SELECT_OPTION, [this]()
                                                  { settings.setTemperatureUnit(TemperatureUnit::Celsius); }));
-    menuRouter.addMenuItem("temp_unit", MenuItem("Fahrenheit", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("temp_unit", MenuItem("Fahrenheit", ActionType::SELECT_OPTION, [this]()
                                                  { settings.setTemperatureUnit(TemperatureUnit::Fahrenheit); }));
     menuRouter.addMenuItem("settings", MenuItem("Auto Sleep", ActionType::OPEN_SUBMENU, "auto_sleep"));
     menuRouter.createMenu("auto_sleep", "Auto Sleep");
@@ -179,7 +179,7 @@ bool AppStateManager::shouldCheckForUpdates()
 {
     unsigned long currentTime = millis();
 
-    return (currentTime - lastUpdateCheckTime) > 600000 || lastUpdateCheckTime == 0;
+    return (currentTime - lastUpdateCheckTime) > 30000 || lastUpdateCheckTime == 0;
 }
 
 void AppStateManager::displaySetTemperature()
@@ -395,7 +395,8 @@ void AppStateManager::displayWifiProvisioning()
     switch (currentState)
     {
     case WiFiManagerState::IDLE:
-        displayManager.displayCenteredWrappedText("Initializing WiFi...");
+        wifiManager.initiateSmartConfig();
+        wifiManager.updateStateAndNotify(WiFiManagerState::SMARTCONFIG, "Initialising...");
         break;
     case WiFiManagerState::CONNECTED:
         if (WiFi.status() != WL_CONNECTED)

@@ -37,17 +37,17 @@ void AppStateManager::initializeMenus()
                                                  { settings.setTemperatureUnit(TemperatureUnit::Fahrenheit); }));
     menuRouter.addMenuItem("settings", MenuItem("Auto Sleep", ActionType::OPEN_SUBMENU, "auto_sleep"));
     menuRouter.createMenu("auto_sleep", "Auto Sleep");
-    menuRouter.addMenuItem("auto_sleep", MenuItem("Off", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("auto_sleep", MenuItem("Off", ActionType::SELECT_OPTION, [this]()
                                                   { settings.setAutoSleepOption(0); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("10s", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("auto_sleep", MenuItem("10s", ActionType::SELECT_OPTION, [this]()
                                                   { settings.setAutoSleepOption(10000); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("30s", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("auto_sleep", MenuItem("30s", ActionType::SELECT_OPTION, [this]()
                                                   { settings.setAutoSleepOption(30000); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("1m", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("auto_sleep", MenuItem("1m", ActionType::SELECT_OPTION, [this]()
                                                   { settings.setAutoSleepOption(60000); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("5m", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("auto_sleep", MenuItem("5m", ActionType::SELECT_OPTION, [this]()
                                                   { settings.setAutoSleepOption(300000); }));
-    menuRouter.addMenuItem("auto_sleep", MenuItem("30m", ActionType::EXECUTE_CALLBACK, [this]()
+    menuRouter.addMenuItem("auto_sleep", MenuItem("30m", ActionType::SELECT_OPTION, [this]()
                                                   { settings.setAutoSleepOption(1800000); }));
     menuRouter.addMenuItem("settings", MenuItem("About", ActionType::OPEN_SUBMENU, "about"));
     menuRouter.createMenu("about", "About");

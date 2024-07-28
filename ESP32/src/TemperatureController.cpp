@@ -22,9 +22,9 @@ void TemperatureController::tick()
     {
         lastUpdateTime = currentTime;
         temperatureSensor.update();
-        currentStatus.currentTemperature = settings.getTemperatureUnit() == TemperatureUnit::Celsius
-                                               ? temperatureSensor.readTemperature()
-                                               : temperatureSensor.readTemperatureF();
+        currentStatus.currentTemperature = settings.getTemperatureUnit() == TemperatureUnit::Fahrenheit
+                                               ? temperatureSensor.readTemperatureF()
+                                               : temperatureSensor.readTemperature();
     }
     regulateTemperature();
 }

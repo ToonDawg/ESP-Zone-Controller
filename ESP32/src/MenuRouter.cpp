@@ -83,6 +83,10 @@ void MenuRouter::selectCurrentItem()
             case ActionType::OPEN_SUBMENU:
                 navigateToMenu(selectedItem.getLinkedMenuId());
                 break;
+            case ActionType::SELECT_OPTION:
+                selectedItem.execute();
+                navigateToParentMenu();
+                break;
             }
         }
     }

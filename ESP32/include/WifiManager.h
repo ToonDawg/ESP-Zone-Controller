@@ -26,10 +26,14 @@ public:
     bool isWiFiConnected() const { return state == WiFiManagerState::CONNECTED; }
     void disconnectAndClearCredentials();
     void restartSmartConfig();
+    String getSSID() const;
+    String getIPAddress() const;
+    void handleConnectionAttempt();
+
 
 private:
     static WiFiManager *instance;
-    static constexpr unsigned long CONNECTION_TIMEOUT = 30000; // 30 seconds
+    static constexpr unsigned long CONNECTION_TIMEOUT = 30000;
     static constexpr int MAX_CONNECTION_ATTEMPTS = 3;
     WiFiManagerState state;
     Settings &settings;
@@ -39,7 +43,6 @@ private:
 
     void initiateSmartConfig();
     void connectUsingStoredCredentials();
-    void handleConnectionAttempt();
     void updateStateAndNotify(WiFiManagerState newState, const char *message);
 
     static void handleWiFiStateChange(WiFiEvent_t event);

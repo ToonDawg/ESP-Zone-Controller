@@ -115,3 +115,11 @@ void WiFiManager::restartSmartConfig() {
     disconnectAndClearCredentials();
     initiateSmartConfig();
 }
+
+String WiFiManager::getSSID() const {
+    return WiFi.SSID();
+}
+
+String WiFiManager::getIPAddress() const {
+    return WiFi.localIP().toString();
+}

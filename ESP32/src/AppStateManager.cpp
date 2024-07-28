@@ -12,7 +12,8 @@ AppStateManager::AppStateManager(DisplayManager &displayManager, TemperatureCont
       menuRenderer(displayManager),
       wifiManager(wifiManager),
       lastActivityTime(0),
-      lastSetTempAdjustmentTime(0)
+      lastSetTempAdjustmentTime(0),
+      lastUpdateCheckTime(0)
 {
     initializeMenus();
 }
@@ -65,9 +66,9 @@ void AppStateManager::initializeMenus()
                                             { wifiManager.disconnectAndClearCredentials(); }));
     menuRouter.addMenuItem("wifi", MenuItem("Details", ActionType::OPEN_SUBMENU, "wifi_details"));
     menuRouter.createMenu("wifi_details", "WiFi Details");
-    menuRouter.addMenuItem("wifi_details", MenuItem( WiFi.localIP().toString(), ActionType::DISPLAY_VALUE, [this]() {}));
+    menuRouter.addMenuItem("wifi_details", MenuItem( wifiManager.getIPAddress(), ActionType::DISPLAY_VALUE, [this]() {}));
     menuRouter.addMenuItem("wifi_details", MenuItem( WiFi.macAddress(), ActionType::DISPLAY_VALUE, [this]() {}));
-    menuRouter.addMenuItem("wifi_details", MenuItem( WiFi.SSID(), ActionType::DISPLAY_VALUE, [this]() {}));
+    menuRouter.addMenuItem("wifi_details", MenuItem( wifiManager.getSSID(), ActionType::DISPLAY_VALUE, [this]() {}));
 
     menuRouter.navigateToMenu("main");
 }
@@ -140,17 +141,21 @@ void AppStateManager::displayCurrentTemperature()
     displayManager.displayTemperature(temperatureController.getStatus().currentTemperature, tempIcon);
     displayManager.displayIconBottomLeft(temperatureController.getModeIcon());
     displayManager.displayIconBottomRight(temperatureController.getMotorStateIcon());
+    
+    if (wifiManager.isWiFiConnected())
+    {
+        displayManager.displayIconBottomMiddle(wifiIcon);
+    }
 }
 
 void AppStateManager::displayCheckForUpdates()
 {
-    Serial.println("Checking for updates...");
     displayManager.displayMenuTitle("Check for updates");
     if (shouldCheckForUpdates())
     {
         displayManager.showLoaderWithText("Checking...");
         String latestVersion = updater.getLatestVersion();
-        settings.setLastUpdateCheck(millis());
+        lastUpdateCheckTime = millis();
         updateLatestVersionInSettings(latestVersion);
 
         if (latestVersion.isEmpty())
@@ -171,12 +176,9 @@ void AppStateManager::displayCheckForUpdates()
 
 bool AppStateManager::shouldCheckForUpdates()
 {
-    Serial.println("Checking for updates...");
-    unsigned long lastCheck = settings.getLastUpdateCheck();
     unsigned long currentTime = millis();
-    Serial.println("Last check: " + lastCheck);
 
-    return (currentTime - lastCheck) > 600000 || lastCheck == 0;
+    return (currentTime - lastUpdateCheckTime) > 600000 || lastUpdateCheckTime == 0;
 }
 
 void AppStateManager::displaySetTemperature()
@@ -217,7 +219,7 @@ void AppStateManager::displayUpdate()
     {
         displayManager.showLoaderWithText("Checking for updates...");
         latestVersion = updater.getLatestVersion();
-        settings.setLastUpdateCheck(millis());
+        lastUpdateCheckTime = millis();
         updateLatestVersionInSettings(latestVersion);
     }
 
@@ -395,10 +397,11 @@ void AppStateManager::displayWifiProvisioning()
         displayManager.displayCenteredWrappedText("Initializing WiFi...");
         break;
     case WiFiManagerState::SMARTCONFIG:
-        displayManager.displayCenteredWrappedText("SmartConfig Mode\nUse app to connect");
+        displayManager.displayCenteredWrappedText("Scanning for APP...");
         break;
     case WiFiManagerState::CONNECTING:
         displayManager.showLoaderWithText(latestStatus);
+        wifiManager.handleConnectionAttempt();
         break;
     case WiFiManagerState::CONNECTION_FAILED:
     case WiFiManagerState::DISCONNECTED:

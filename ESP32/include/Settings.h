@@ -31,10 +31,7 @@ public:
     String getCurrentSoftwareVersion();
 
     void updateAllSettings(bool isCelsius, bool isNormal, float calibration);
-
-    void setLastUpdateCheck(unsigned long time);
-    unsigned long getLastUpdateCheck();
-
+    
     void setLatestAvailableVersion(const String &version);
     String getLatestAvailableVersion();
 

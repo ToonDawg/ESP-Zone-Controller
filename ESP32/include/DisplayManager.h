@@ -40,6 +40,7 @@ public:
     void displayTemperature(float temperature, tImage tempIcon);
     void displayIconBottomLeft(const tImage &icon);
     void displayIconBottomRight(const tImage &icon);
+    void displayIconBottomMiddle(const tImage &icon);
     void displayBottomCenterText(const String &text);
     void displayOff();
     void render();

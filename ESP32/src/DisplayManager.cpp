@@ -109,6 +109,13 @@ void DisplayManager::displayIconBottomRight(const tImage &icon)
     draw8BitImage(display.width() - icon.width - DISPLAY_SIDE_MARGIN, display.height() - icon.height - DISPLAY_SIDE_MARGIN, icon);
 }
 
+void DisplayManager::displayIconBottomMiddle(const tImage &icon)
+    {
+        int x = (display.width() - icon.width) / 2;
+        int y = display.height() - icon.height - DISPLAY_SIDE_MARGIN;
+        draw8BitImage(x, y, icon);
+    }
+
 void DisplayManager::displayBottomCenterText(const String &text)
 {
     TextStyle style(FontSize::MEDIUM, MONOOLED_WHITE, TextAlignment::CENTER);

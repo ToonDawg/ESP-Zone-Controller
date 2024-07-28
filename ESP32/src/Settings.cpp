@@ -67,16 +67,6 @@ void Settings::updateAllSettings(bool isCelsius, bool isNormal, float calibratio
     preferences.putFloat("temp_cal", calibration);
 }
 
-void Settings::setLastUpdateCheck(unsigned long time)
-{
-    preferences.putULong("last_update", time);
-}
-
-unsigned long Settings::getLastUpdateCheck()
-{
-    return preferences.getULong("last_update", 0);
-}
-
 void Settings::setLatestAvailableVersion(const String &version)
 {
     preferences.putString("latest_ver", version);
@@ -140,10 +130,6 @@ void Settings::printAllSettings() {
     // Current Software Version
     Serial.print("Current Software Version: ");
     Serial.println(getCurrentSoftwareVersion());
-
-    // Last Update Check
-    Serial.print("Last Update Check: ");
-    Serial.println(getLastUpdateCheck());
 
     // Latest Available Version
     Serial.print("Latest Available Version: ");

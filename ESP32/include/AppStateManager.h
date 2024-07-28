@@ -54,6 +54,7 @@ private:
 
     unsigned long lastActivityTime;
     unsigned long lastSetTempAdjustmentTime;
+    unsigned long lastUpdateCheckTime;
     static const unsigned long SLEEP_TIMEOUT = 10000;
 
     void initializeMenus();

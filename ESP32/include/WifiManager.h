@@ -32,17 +32,17 @@ public:
     void connectUsingStoredCredentials();
     void setConnectionStartTime(unsigned long time) { connectionStartTime = time; }
     void setConnectionAttempts(uint8_t attempts) { connectionAttempts = attempts; }
+    void initiateSmartConfig();
 
 private:
     static WiFiManager *instance;
-    static constexpr unsigned long CONNECTION_TIMEOUT = 30000;
+    static constexpr unsigned long CONNECTION_TIMEOUT = 20000;
     static constexpr int MAX_CONNECTION_ATTEMPTS = 3;
     WiFiManagerState state;
     Settings &settings;
     unsigned long connectionStartTime;
     uint8_t connectionAttempts;
     const char *statusMessage;
-    void initiateSmartConfig();
     static void handleWiFiStateChange(WiFiEvent_t event);
 };
 

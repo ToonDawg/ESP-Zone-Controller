@@ -1,4 +1,4 @@
-#include "WiFiManager.h"
+#include "WifiManager.h"
 
 WiFiManager* WiFiManager::instance = nullptr;
 
